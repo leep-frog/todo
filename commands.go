@@ -88,6 +88,8 @@ type fetcher struct {
 	Primary bool
 }
 
+func (f *fetcher) PrefixFilter() bool { return true }
+
 func (f *fetcher) Fetch(_ *commands.Value, args, _ map[string]*commands.Value) []string {
 	if f.Primary {
 		primaries := make([]string, 0, len(f.List.Items))

@@ -88,15 +88,15 @@ type fetcher struct {
 	Primary bool
 }
 
-func (f *fetcher) PrefixFilter() bool { return true }
-
-func (f *fetcher) Fetch(_ *commands.Value, args, _ map[string]*commands.Value) []string {
+func (f *fetcher) Fetch(_ *commands.Value, args, _ map[string]*commands.Value) *commands.Completion {
 	if f.Primary {
 		primaries := make([]string, 0, len(f.List.Items))
 		for p := range f.List.Items {
 			primaries = append(primaries, p)
 		}
-		return primaries
+		return &commands.Completion{
+			Suggestions: primaries,
+		}
 	}
 
 	// TODO: make this string a constant throughout the package (same with secondary)
@@ -106,7 +106,9 @@ func (f *fetcher) Fetch(_ *commands.Value, args, _ map[string]*commands.Value) [
 	for s := range sMap {
 		secondaries = append(secondaries, s)
 	}
-	return secondaries
+	return &commands.Completion{
+		Suggestions: secondaries,
+	}
 }
 
 func (tl *List) Command() commands.Command {

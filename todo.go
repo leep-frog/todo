@@ -34,7 +34,7 @@ func (tl *List) Load(jsn string) error {
 	return nil
 }
 
-func (tl *List) ListItems(_, _ map[string]*commands.Value) (*commands.ExecutorResponse, error) {
+func (tl *List) ListItems(cos commands.CommandOS, _, _ map[string]*commands.Value) (*commands.ExecutorResponse, bool) {
 	ps := make([]string, 0, len(tl.Items))
 	count := 0
 	for k, v := range tl.Items {
@@ -42,29 +42,25 @@ func (tl *List) ListItems(_, _ map[string]*commands.Value) (*commands.ExecutorRe
 		count += len(v)
 	}
 	sort.Strings(ps)
-	r := make([]string, 0, count)
+
 	for _, p := range ps {
 		f := tl.PrimaryFormats[p]
-		r = append(r, f.Format(p))
+		cos.Stdout(f.Format(p))
 		ss := make([]string, 0, len(tl.Items[p]))
 		for s := range tl.Items[p] {
 			ss = append(ss, s)
 		}
 		sort.Strings(ss)
 		for _, s := range ss {
-			r = append(r, fmt.Sprintf("  %s", s))
+			cos.Stdout(fmt.Sprintf("  %s", s))
 		}
 	}
 
-	resp := &commands.ExecutorResponse{}
-	if len(r) > 0 {
-		resp.Stdout = r
-	}
-	return resp, nil
+	return &commands.ExecutorResponse{}, true
 }
 
 // TODO: can this just be a generic feature in color package?
-func (tl *List) FormatPrimary(args, flags map[string]*commands.Value) (*commands.ExecutorResponse, error) {
+func (tl *List) FormatPrimary(cos commands.CommandOS, args, flags map[string]*commands.Value) (*commands.ExecutorResponse, bool) {
 	primary := *args["primary"].String()
 	codes := *args["format"].StringList()
 
@@ -78,16 +74,13 @@ func (tl *List) FormatPrimary(args, flags map[string]*commands.Value) (*commands
 	}
 	for _, c := range codes {
 		if err := f.AddAttribute(c); err != nil {
-			return &commands.ExecutorResponse{
-				Stderr: []string{
-					fmt.Sprintf("error adding todo list attribute: %v", err),
-				},
-			}, nil
+			cos.Stderr("error adding todo list attribute: %v", err)
+			return nil, false
 		}
 	}
 	tl.changed = true
 
-	return &commands.ExecutorResponse{}, nil
+	return &commands.ExecutorResponse{}, true
 }
 
 func (tl *List) Changed() bool {

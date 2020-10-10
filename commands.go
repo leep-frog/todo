@@ -1,12 +1,10 @@
 package todo
 
 import (
-	"fmt"
-
 	"github.com/leep-frog/cli/commands"
 )
 
-func (tl *List) AddItem(args, flag map[string]*commands.Value) (*commands.ExecutorResponse, error) {
+func (tl *List) AddItem(cos commands.CommandOS, args, flag map[string]*commands.Value) (*commands.ExecutorResponse, bool) {
 	if tl.Items == nil {
 		tl.Items = map[string]map[string]bool{}
 		tl.changed = true
@@ -20,32 +18,28 @@ func (tl *List) AddItem(args, flag map[string]*commands.Value) (*commands.Execut
 
 	if s, ok := args["secondary"]; ok {
 		if tl.Items[p][*s.String()] {
-			return &commands.ExecutorResponse{
-				Stderr: []string{fmt.Sprintf("item %q, %q already exists", p, *s.String())},
-			}, nil
+			cos.Stderr("item %q, %q already exists", p, *s.String())
+			return nil, false
 		}
 		tl.Items[p][*s.String()] = true
 		tl.changed = true
 	} else if !tl.changed {
-		return &commands.ExecutorResponse{
-			Stderr: []string{fmt.Sprintf("primary item %q already exists", p)},
-		}, nil
+		cos.Stderr("primary item %q already exists", p)
+		return nil, false
 	}
-	return &commands.ExecutorResponse{}, nil
+	return &commands.ExecutorResponse{}, true
 }
 
-func (tl *List) DeleteItem(args, flag map[string]*commands.Value) (*commands.ExecutorResponse, error) {
+func (tl *List) DeleteItem(cos commands.CommandOS, args, flag map[string]*commands.Value) (*commands.ExecutorResponse, bool) {
 	if tl.Items == nil {
-		return &commands.ExecutorResponse{
-			Stderr: []string{"can't delete from empty list"},
-		}, nil
+		cos.Stderr("can't delete from empty list")
+		return nil, false
 	}
 
 	p := *args["primary"].String()
 	if _, ok := tl.Items[p]; !ok {
-		return &commands.ExecutorResponse{
-			Stderr: []string{fmt.Sprintf("Primary item %q does not exist", p)},
-		}, nil
+		cos.Stderr("Primary item %q does not exist", p)
+		return nil, false
 	}
 
 	// Delete secondary if provided
@@ -53,23 +47,21 @@ func (tl *List) DeleteItem(args, flag map[string]*commands.Value) (*commands.Exe
 		if tl.Items[p][*s.String()] {
 			delete(tl.Items[p], *s.String())
 			tl.changed = true
-			return &commands.ExecutorResponse{}, nil
+			return &commands.ExecutorResponse{}, true
 		} else {
-			return &commands.ExecutorResponse{
-				Stderr: []string{fmt.Sprintf("Secondary item %q does not exist", *s.String())},
-			}, nil
+			cos.Stderr("Secondary item %q does not exist", *s.String())
+			return nil, false
 		}
 	}
 
 	if len(tl.Items[p]) != 0 {
-		return &commands.ExecutorResponse{
-			Stderr: []string{"Can't delete primary item that still has secondary items"},
-		}, nil
+		cos.Stderr("Can't delete primary item that still has secondary items")
+		return nil, false
 	}
 
 	delete(tl.Items, p)
 	tl.changed = true
-	return &commands.ExecutorResponse{}, nil
+	return &commands.ExecutorResponse{}, true
 }
 
 // Name returns the name of the CLI.

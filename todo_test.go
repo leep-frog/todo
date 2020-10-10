@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leep-frog/cli/commands"
 	"github.com/leep-frog/cli/color"
+	"github.com/leep-frog/cli/commands"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -71,17 +71,19 @@ func TestExecution(t *testing.T) {
 		name        string
 		l           *List
 		args        []string
+		wantOK      bool
 		want        *List
 		wantResp    *commands.ExecutorResponse
 		wantChanged bool
-		wantErr     string
+		wantStderr  []string
+		wantStdout  []string
 	}{
 		{
-			name:    "errors on unknown arg",
-			l:       &List{},
-			args:    []string{"uhh"},
-			want:    &List{},
-			wantErr: "extra unknown args ([uhh])",
+			name:       "errors on unknown arg",
+			l:          &List{},
+			args:       []string{"uhh"},
+			want:       &List{},
+			wantStderr: []string{"extra unknown args ([uhh])"},
 		},
 		// ListItems
 		{
@@ -101,6 +103,7 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
+			wantOK: true,
 			want: &List{
 				Items: map[string]map[string]bool{
 					"write": map[string]bool{
@@ -116,13 +119,12 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			wantResp: &commands.ExecutorResponse{
-				Stdout: []string{
-					color.Blue.Format(color.Bold.Format("sleep")),
-					"write",
-					"  code",
-					"  tests",
-				},
+			wantResp: &commands.ExecutorResponse{},
+			wantStdout: []string{
+				color.Blue.Format(color.Bold.Format("sleep")),
+				"write",
+				"  code",
+				"  tests",
 			},
 		},
 		{
@@ -142,7 +144,8 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			args: []string{},
+			args:   []string{},
+			wantOK: true,
 			want: &List{
 				Items: map[string]map[string]bool{
 					"write": map[string]bool{
@@ -158,34 +161,34 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			wantResp: &commands.ExecutorResponse{
-				Stdout: []string{
-					color.Blue.Format(color.Bold.Format("sleep")),
-					"write",
-					"  code",
-					"  tests",
-				},
+			wantResp: &commands.ExecutorResponse{},
+			wantStdout: []string{
+				color.Blue.Format(color.Bold.Format("sleep")),
+				"write",
+				"  code",
+				"  tests",
 			},
 		},
 		// AddItem
 		{
-			name:    "errors if no arguments",
-			l:       &List{},
-			args:    []string{"a"},
-			want:    &List{},
-			wantErr: `no argument provided for "primary"`,
+			name:       "errors if no arguments",
+			l:          &List{},
+			args:       []string{"a"},
+			want:       &List{},
+			wantStderr: []string{`no argument provided for "primary"`},
 		},
 		{
-			name:    "errors if too many arguments",
-			l:       &List{},
-			args:    []string{"a", "write", "tests", "exclusively"},
-			want:    &List{},
-			wantErr: "extra unknown args ([exclusively])",
+			name:       "errors if too many arguments",
+			l:          &List{},
+			args:       []string{"a", "write", "tests", "exclusively"},
+			want:       &List{},
+			wantStderr: []string{"extra unknown args ([exclusively])"},
 		},
 		{
-			name: "adds primary to empty list",
-			l:    &List{},
-			args: []string{"a", "sleep"},
+			name:   "adds primary to empty list",
+			l:      &List{},
+			args:   []string{"a", "sleep"},
+			wantOK: true,
 			want: &List{
 				Items: map[string]map[string]bool{
 					"sleep": map[string]bool{},
@@ -195,9 +198,10 @@ func TestExecution(t *testing.T) {
 			wantResp:    &commands.ExecutorResponse{},
 		},
 		{
-			name: "adds primary and secondary to empty list",
-			l:    &List{},
-			args: []string{"a", "write", "tests"},
+			name:   "adds primary and secondary to empty list",
+			l:      &List{},
+			args:   []string{"a", "write", "tests"},
+			wantOK: true,
 			want: &List{
 				Items: map[string]map[string]bool{
 					"write": map[string]bool{
@@ -217,7 +221,8 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			args: []string{"a", "write", "tests"},
+			args:   []string{"a", "write", "tests"},
+			wantOK: true,
 			want: &List{
 				Items: map[string]map[string]bool{
 					"write": map[string]bool{
@@ -242,10 +247,8 @@ func TestExecution(t *testing.T) {
 					"write": map[string]bool{},
 				},
 			},
-			wantResp: &commands.ExecutorResponse{
-				Stderr: []string{
-					`primary item "write" already exists`,
-				},
+			wantStderr: []string{
+				`primary item "write" already exists`,
 			},
 		},
 		{
@@ -265,54 +268,46 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			wantResp: &commands.ExecutorResponse{
-				Stderr: []string{
-					`item "write", "code" already exists`,
-				},
+			wantStderr: []string{
+				`item "write", "code" already exists`,
 			},
 		},
 		// DeleteItem
 		{
-			name:    "errors if no arguments",
-			l:       &List{},
-			args:    []string{"d"},
-			want:    &List{},
-			wantErr: `no argument provided for "primary"`,
+			name:       "errors if no arguments",
+			l:          &List{},
+			args:       []string{"d"},
+			want:       &List{},
+			wantStderr: []string{`no argument provided for "primary"`},
 		},
 		{
-			name:    "errors if too many arguments",
-			l:       &List{},
-			args:    []string{"d", "write", "tests", "exclusively"},
-			want:    &List{},
-			wantErr: "extra unknown args ([exclusively])",
+			name:       "errors if too many arguments",
+			l:          &List{},
+			args:       []string{"d", "write", "tests", "exclusively"},
+			want:       &List{},
+			wantStderr: []string{"extra unknown args ([exclusively])"},
 		},
 		{
-			name: "error if empty items and deleting primary",
-			l:    &List{},
-			args: []string{"d", "write"},
-			want: &List{},
-			wantResp: &commands.ExecutorResponse{
-				Stderr: []string{"can't delete from empty list"},
-			},
+			name:       "error if empty items and deleting primary",
+			l:          &List{},
+			args:       []string{"d", "write"},
+			want:       &List{},
+			wantStderr: []string{"can't delete from empty list"},
 		},
 		{
-			name: "error if empty items and deleting secondary",
-			l:    &List{},
-			args: []string{"d", "write", "code"},
-			want: &List{},
-			wantResp: &commands.ExecutorResponse{
-				Stderr: []string{"can't delete from empty list"},
-			},
+			name:       "error if empty items and deleting secondary",
+			l:          &List{},
+			args:       []string{"d", "write", "code"},
+			want:       &List{},
+			wantStderr: []string{"can't delete from empty list"},
 		},
 		{
 			name: "error if unknown primary when deleting primary",
 			l: &List{
 				Items: map[string]map[string]bool{},
 			},
-			args: []string{"d", "write"},
-			wantResp: &commands.ExecutorResponse{
-				Stderr: []string{`Primary item "write" does not exist`},
-			},
+			args:       []string{"d", "write"},
+			wantStderr: []string{`Primary item "write" does not exist`},
 			want: &List{
 				Items: map[string]map[string]bool{},
 			},
@@ -322,10 +317,8 @@ func TestExecution(t *testing.T) {
 			l: &List{
 				Items: map[string]map[string]bool{},
 			},
-			args: []string{"d", "write", "code"},
-			wantResp: &commands.ExecutorResponse{
-				Stderr: []string{`Primary item "write" does not exist`},
-			},
+			args:       []string{"d", "write", "code"},
+			wantStderr: []string{`Primary item "write" does not exist`},
 			want: &List{
 				Items: map[string]map[string]bool{},
 			},
@@ -337,10 +330,8 @@ func TestExecution(t *testing.T) {
 					"write": map[string]bool{},
 				},
 			},
-			args: []string{"d", "write", "code"},
-			wantResp: &commands.ExecutorResponse{
-				Stderr: []string{`Secondary item "code" does not exist`},
-			},
+			args:       []string{"d", "write", "code"},
+			wantStderr: []string{`Secondary item "code" does not exist`},
 			want: &List{
 				Items: map[string]map[string]bool{
 					"write": map[string]bool{},
@@ -357,10 +348,8 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			args: []string{"d", "write"},
-			wantResp: &commands.ExecutorResponse{
-				Stderr: []string{"Can't delete primary item that still has secondary items"},
-			},
+			args:       []string{"d", "write"},
+			wantStderr: []string{"Can't delete primary item that still has secondary items"},
 			want: &List{
 				Items: map[string]map[string]bool{
 					"write": map[string]bool{
@@ -381,6 +370,7 @@ func TestExecution(t *testing.T) {
 				},
 			},
 			args:     []string{"d", "write"},
+			wantOK:   true,
 			wantResp: &commands.ExecutorResponse{},
 			want: &List{
 				Items: map[string]map[string]bool{
@@ -402,6 +392,7 @@ func TestExecution(t *testing.T) {
 				},
 			},
 			args:     []string{"d", "write", "code"},
+			wantOK:   true,
 			wantResp: &commands.ExecutorResponse{},
 			want: &List{
 				Items: map[string]map[string]bool{
@@ -424,6 +415,7 @@ func TestExecution(t *testing.T) {
 				},
 			},
 			args:     []string{"f", "write", "bold", string(color.Red)},
+			wantOK:   true,
 			wantResp: &commands.ExecutorResponse{},
 			want: &List{
 				Items: map[string]map[string]bool{
@@ -458,6 +450,7 @@ func TestExecution(t *testing.T) {
 				},
 			},
 			args:     []string{"f", "write", "shy", string(color.Green)},
+			wantOK:   true,
 			wantResp: &commands.ExecutorResponse{},
 			want: &List{
 				Items: map[string]map[string]bool{
@@ -485,10 +478,8 @@ func TestExecution(t *testing.T) {
 				},
 			},
 			args: []string{"f", "write", "crazy"},
-			wantResp: &commands.ExecutorResponse{
-				Stderr: []string{
-					"error adding todo list attribute: invalid attribute! crazy",
-				},
+			wantStderr: []string{
+				"error adding todo list attribute: invalid attribute! crazy",
 			},
 			want: &List{
 				PrimaryFormats: map[string]*color.Format{
@@ -504,19 +495,20 @@ func TestExecution(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			got, err := commands.Execute(test.l.Command(), test.args)
-			if err != nil && test.wantErr == "" {
-				t.Fatalf("Execute(%v) returned error (%v); want nil", test.args, err)
+			tcos := &commands.TestCommandOS{}
+			got, ok := commands.Execute(tcos, test.l.Command(), test.args)
+			if ok != test.wantOK {
+				t.Fatalf("commands.Execute(%v) returned %v for ok; want %v", test.args, ok, test.wantOK)
 			}
-			if err == nil && test.wantErr != "" {
-				t.Fatalf("Execute(%v) returned nil; want error (%v)", test.args, test.wantErr)
-			}
-			if err != nil && test.wantErr != "" && !strings.Contains(err.Error(), test.wantErr) {
-				t.Fatalf("Execute(%v) returned error (%v); want (%v)", test.args, err, test.wantErr)
-			}
-
 			if diff := cmp.Diff(test.wantResp, got); diff != "" {
 				t.Fatalf("Execute(%v) produced response diff (-want, +got):\n%s", test.args, diff)
+			}
+
+			if diff := cmp.Diff(test.wantStdout, tcos.GetStdout()); diff != "" {
+				t.Errorf("command.Execute(%v) produced stdout diff (-want, +got):\n%s", test.args, diff)
+			}
+			if diff := cmp.Diff(test.wantStderr, tcos.GetStderr()); diff != "" {
+				t.Errorf("command.Execute(%v) produced stderr diff (-want, +got):\n%s", test.args, diff)
 			}
 
 			if diff := cmp.Diff(test.want, test.l, cmpopts.IgnoreUnexported(List{})); diff != "" {

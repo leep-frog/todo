@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/leep-frog/cli/color"
-	"github.com/leep-frog/cli/commands"
+	"github.com/leep-frog/commands/color"
+	"github.com/leep-frog/commands/commands"
 )
 
 const (
@@ -22,6 +22,8 @@ type List struct {
 	changed bool
 }
 
+func (tl *List) Option() *commands.OptionInfo { return nil }
+
 func (tl *List) Load(jsn string) error {
 	if jsn == "" {
 		tl = &List{}
@@ -34,7 +36,7 @@ func (tl *List) Load(jsn string) error {
 	return nil
 }
 
-func (tl *List) ListItems(cos commands.CommandOS, _, _ map[string]*commands.Value) (*commands.ExecutorResponse, bool) {
+func (tl *List) ListItems(cos commands.CommandOS, _, _ map[string]*commands.Value, _ *commands.OptionInfo) (*commands.ExecutorResponse, bool) {
 	ps := make([]string, 0, len(tl.Items))
 	count := 0
 	for k, v := range tl.Items {
@@ -60,7 +62,7 @@ func (tl *List) ListItems(cos commands.CommandOS, _, _ map[string]*commands.Valu
 }
 
 // TODO: can this just be a generic feature in color package?
-func (tl *List) FormatPrimary(cos commands.CommandOS, args, flags map[string]*commands.Value) (*commands.ExecutorResponse, bool) {
+func (tl *List) FormatPrimary(cos commands.CommandOS, args, flags map[string]*commands.Value, _ *commands.OptionInfo) (*commands.ExecutorResponse, bool) {
 	primary := *args["primary"].String()
 	codes := *args["format"].StringList()
 

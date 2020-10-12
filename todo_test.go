@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leep-frog/cli/color"
-	"github.com/leep-frog/cli/commands"
+	"github.com/leep-frog/commands/color"
+	"github.com/leep-frog/commands/commands"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -496,7 +496,7 @@ func TestExecution(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			tcos := &commands.TestCommandOS{}
-			got, ok := commands.Execute(tcos, test.l.Command(), test.args)
+			got, ok := commands.Execute(tcos, test.l.Command(), test.args, nil)
 			if ok != test.wantOK {
 				t.Fatalf("commands.Execute(%v) returned %v for ok; want %v", test.args, ok, test.wantOK)
 			}

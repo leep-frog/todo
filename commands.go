@@ -1,10 +1,10 @@
 package todo
 
 import (
-	"github.com/leep-frog/cli/commands"
+	"github.com/leep-frog/commands/commands"
 )
 
-func (tl *List) AddItem(cos commands.CommandOS, args, flag map[string]*commands.Value) (*commands.ExecutorResponse, bool) {
+func (tl *List) AddItem(cos commands.CommandOS, args, flag map[string]*commands.Value, _ *commands.OptionInfo) (*commands.ExecutorResponse, bool) {
 	if tl.Items == nil {
 		tl.Items = map[string]map[string]bool{}
 		tl.changed = true
@@ -30,7 +30,7 @@ func (tl *List) AddItem(cos commands.CommandOS, args, flag map[string]*commands.
 	return &commands.ExecutorResponse{}, true
 }
 
-func (tl *List) DeleteItem(cos commands.CommandOS, args, flag map[string]*commands.Value) (*commands.ExecutorResponse, bool) {
+func (tl *List) DeleteItem(cos commands.CommandOS, args, flag map[string]*commands.Value, _ *commands.OptionInfo) (*commands.ExecutorResponse, bool) {
 	if tl.Items == nil {
 		cos.Stderr("can't delete from empty list")
 		return nil, false

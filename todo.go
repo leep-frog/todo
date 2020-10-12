@@ -22,7 +22,7 @@ type List struct {
 	changed bool
 }
 
-func (tl *List) Option() *commands.OptionInfo { return nil }
+func (tl *List) Option() *commands.Option { return nil }
 
 func (tl *List) Load(jsn string) error {
 	if jsn == "" {

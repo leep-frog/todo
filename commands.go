@@ -1,6 +1,7 @@
 package todo
 
 import (
+	"github.com/leep-frog/commands/color"
 	"github.com/leep-frog/commands/commands"
 )
 
@@ -27,7 +28,7 @@ func (tl *List) AddItem(cos commands.CommandOS, args, flag map[string]*commands.
 		cos.Stderr("primary item %q already exists", p)
 		return nil, false
 	}
-	return &commands.ExecutorResponse{}, true
+	return nil, true
 }
 
 func (tl *List) DeleteItem(cos commands.CommandOS, args, flag map[string]*commands.Value, _ *commands.OptionInfo) (*commands.ExecutorResponse, bool) {
@@ -47,7 +48,7 @@ func (tl *List) DeleteItem(cos commands.CommandOS, args, flag map[string]*comman
 		if tl.Items[p][*s.String()] {
 			delete(tl.Items[p], *s.String())
 			tl.changed = true
-			return &commands.ExecutorResponse{}, true
+			return nil, true
 		} else {
 			cos.Stderr("Secondary item %q does not exist", *s.String())
 			return nil, false
@@ -61,7 +62,7 @@ func (tl *List) DeleteItem(cos commands.CommandOS, args, flag map[string]*comman
 
 	delete(tl.Items, p)
 	tl.changed = true
-	return &commands.ExecutorResponse{}, true
+	return nil, true
 }
 
 // Name returns the name of the CLI.
@@ -141,7 +142,7 @@ func (tl *List) Command() commands.Command {
 				Args: []commands.Arg{
 					commands.StringArg("primary", true, pf),
 					// TODO: make color completor.
-					commands.StringListArg("format", 1, -1, nil),
+					color.Arg,
 				},
 			},
 		},

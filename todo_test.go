@@ -119,7 +119,6 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			wantResp: &commands.ExecutorResponse{},
 			wantStdout: []string{
 				color.Blue.Format(color.Bold.Format("sleep")),
 				"write",
@@ -161,7 +160,6 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			wantResp: &commands.ExecutorResponse{},
 			wantStdout: []string{
 				color.Blue.Format(color.Bold.Format("sleep")),
 				"write",
@@ -195,7 +193,6 @@ func TestExecution(t *testing.T) {
 				},
 			},
 			wantChanged: true,
-			wantResp:    &commands.ExecutorResponse{},
 		},
 		{
 			name:   "adds primary and secondary to empty list",
@@ -210,7 +207,6 @@ func TestExecution(t *testing.T) {
 				},
 			},
 			wantChanged: true,
-			wantResp:    &commands.ExecutorResponse{},
 		},
 		{
 			name: "adds just secondary to empty list",
@@ -232,7 +228,6 @@ func TestExecution(t *testing.T) {
 				},
 			},
 			wantChanged: true,
-			wantResp:    &commands.ExecutorResponse{},
 		},
 		{
 			name: "error if primary already exists",
@@ -369,9 +364,8 @@ func TestExecution(t *testing.T) {
 					"write": map[string]bool{},
 				},
 			},
-			args:     []string{"d", "write"},
-			wantOK:   true,
-			wantResp: &commands.ExecutorResponse{},
+			args:   []string{"d", "write"},
+			wantOK: true,
 			want: &List{
 				Items: map[string]map[string]bool{
 					"design": map[string]bool{
@@ -391,9 +385,8 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			args:     []string{"d", "write", "code"},
-			wantOK:   true,
-			wantResp: &commands.ExecutorResponse{},
+			args:   []string{"d", "write", "code"},
+			wantOK: true,
 			want: &List{
 				Items: map[string]map[string]bool{
 					"write": map[string]bool{
@@ -414,9 +407,8 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			args:     []string{"f", "write", "bold", string(color.Red)},
-			wantOK:   true,
-			wantResp: &commands.ExecutorResponse{},
+			args:   []string{"f", "write", "bold", string(color.Red)},
+			wantOK: true,
 			want: &List{
 				Items: map[string]map[string]bool{
 					"write": map[string]bool{
@@ -449,9 +441,8 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			args:     []string{"f", "write", "shy", string(color.Green)},
-			wantOK:   true,
-			wantResp: &commands.ExecutorResponse{},
+			args:   []string{"f", "write", "shy", string(color.Green)},
+			wantOK: true,
 			want: &List{
 				Items: map[string]map[string]bool{
 					"write": map[string]bool{
@@ -477,10 +468,9 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			args: []string{"f", "write", "crazy"},
-			wantStderr: []string{
-				"error adding todo list attribute: invalid attribute! crazy",
-			},
+			args:        []string{"f", "write", "crazy"},
+			wantOK:      true,
+			wantChanged: true,
 			want: &List{
 				PrimaryFormats: map[string]*color.Format{
 					"write": &color.Format{},
@@ -612,10 +602,12 @@ func TestAutocomplete(t *testing.T) {
 			// TODO: should suggest formats
 			name: "format suggests no secondaries",
 			args: []string{"f", "write", ""},
+			want: color.Attributes(),
 		},
 		{
 			name: "format handles unknown primary",
 			args: []string{"f", "uhh", ""},
+			want: color.Attributes(),
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {

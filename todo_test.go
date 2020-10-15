@@ -599,7 +599,6 @@ func TestAutocomplete(t *testing.T) {
 			},
 		},
 		{
-			// TODO: should suggest formats
 			name: "format suggests no secondaries",
 			args: []string{"f", "write", ""},
 			want: color.Attributes(),

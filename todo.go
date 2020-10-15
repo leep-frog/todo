@@ -61,9 +61,8 @@ func (tl *List) ListItems(cos commands.CommandOS, _, _ map[string]*commands.Valu
 	return nil, true
 }
 
-// TODO: can this just be a generic feature in color package?
 func (tl *List) FormatPrimary(cos commands.CommandOS, args, flags map[string]*commands.Value, _ *commands.OptionInfo) (*commands.ExecutorResponse, bool) {
-	primary := *args["primary"].String()
+	primary := *args[primaryArg].String()
 
 	if tl.PrimaryFormats == nil {
 		tl.PrimaryFormats = map[string]*color.Format{}

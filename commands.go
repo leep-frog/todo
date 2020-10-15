@@ -5,19 +5,24 @@ import (
 	"github.com/leep-frog/commands/commands"
 )
 
+var (
+	primaryArg   = "primary"
+	secondaryArg = "secondary"
+)
+
 func (tl *List) AddItem(cos commands.CommandOS, args, flag map[string]*commands.Value, _ *commands.OptionInfo) (*commands.ExecutorResponse, bool) {
 	if tl.Items == nil {
 		tl.Items = map[string]map[string]bool{}
 		tl.changed = true
 	}
 
-	p := *args["primary"].String()
+	p := *args[primaryArg].String()
 	if _, ok := tl.Items[p]; !ok {
 		tl.Items[p] = map[string]bool{}
 		tl.changed = true
 	}
 
-	if s, ok := args["secondary"]; ok {
+	if s, ok := args[secondaryArg]; ok {
 		if tl.Items[p][*s.String()] {
 			cos.Stderr("item %q, %q already exists", p, *s.String())
 			return nil, false
@@ -37,14 +42,14 @@ func (tl *List) DeleteItem(cos commands.CommandOS, args, flag map[string]*comman
 		return nil, false
 	}
 
-	p := *args["primary"].String()
+	p := *args[primaryArg].String()
 	if _, ok := tl.Items[p]; !ok {
 		cos.Stderr("Primary item %q does not exist", p)
 		return nil, false
 	}
 
 	// Delete secondary if provided
-	if s, ok := args["secondary"]; ok {
+	if s, ok := args[secondaryArg]; ok {
 		if tl.Items[p][*s.String()] {
 			delete(tl.Items[p], *s.String())
 			tl.changed = true
@@ -92,8 +97,7 @@ func (f *fetcher) Fetch(_ *commands.Value, args, _ map[string]*commands.Value) *
 		}
 	}
 
-	// TODO: make this string a constant throughout the package (same with secondary)
-	p := *args["primary"].String()
+	p := *args[primaryArg].String()
 	sMap := f.List.Items[p]
 	secondaries := make([]string, 0, len(sMap))
 	for s := range sMap {
@@ -122,17 +126,16 @@ func (tl *List) Command() commands.Command {
 			// Add item
 			"a": &commands.TerminusCommand{
 				Args: []commands.Arg{
-					commands.StringArg("primary", true, pf),
-					commands.StringArg("secondary", false, nil),
+					commands.StringArg(primaryArg, true, pf),
+					commands.StringArg(secondaryArg, false, nil),
 				},
 				Executor: tl.AddItem,
 			},
 			// Delete item
 			"d": &commands.TerminusCommand{
 				Args: []commands.Arg{
-					// TODO: make these constants (primaryArgGroup, secondaryArgGroup)
-					commands.StringArg("primary", true, pf),
-					commands.StringArg("secondary", false, sf),
+					commands.StringArg(primaryArg, true, pf),
+					commands.StringArg(secondaryArg, false, sf),
 				},
 				Executor: tl.DeleteItem,
 			},
@@ -140,8 +143,7 @@ func (tl *List) Command() commands.Command {
 			"f": &commands.TerminusCommand{
 				Executor: tl.FormatPrimary,
 				Args: []commands.Arg{
-					commands.StringArg("primary", true, pf),
-					// TODO: make color completor.
+					commands.StringArg(primaryArg, true, pf),
 					color.Arg,
 				},
 			},

@@ -62,7 +62,7 @@ func (tl *List) ListItems(cos commands.CommandOS, _, _ map[string]*commands.Valu
 }
 
 func (tl *List) FormatPrimary(cos commands.CommandOS, args, flags map[string]*commands.Value, _ *commands.OptionInfo) (*commands.ExecutorResponse, bool) {
-	primary := args[primaryArg].GetString_()
+	primary := args[primaryArg].String()
 
 	if tl.PrimaryFormats == nil {
 		tl.PrimaryFormats = map[string]*color.Format{}

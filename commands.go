@@ -16,14 +16,14 @@ func (tl *List) AddItem(cos commands.CommandOS, args, flag map[string]*commands.
 		tl.changed = true
 	}
 
-	p := args[primaryArg].GetString_()
+	p := args[primaryArg].String()
 	if _, ok := tl.Items[p]; !ok {
 		tl.Items[p] = map[string]bool{}
 		tl.changed = true
 	}
 
-	if args[secondaryArg].GetSet() {
-		s := args[secondaryArg].GetString_()
+	if args[secondaryArg].Provided() {
+		s := args[secondaryArg].String()
 		if tl.Items[p][s] {
 			cos.Stderr("item %q, %q already exists", p, s)
 			return nil, false
@@ -43,15 +43,15 @@ func (tl *List) DeleteItem(cos commands.CommandOS, args, flag map[string]*comman
 		return nil, false
 	}
 
-	p := args[primaryArg].GetString_()
+	p := args[primaryArg].String()
 	if _, ok := tl.Items[p]; !ok {
 		cos.Stderr("Primary item %q does not exist", p)
 		return nil, false
 	}
 
 	// Delete secondary if provided
-	if args[secondaryArg].GetSet() {
-		s := args[secondaryArg].GetString_()
+	if args[secondaryArg].Provided() {
+		s := args[secondaryArg].String()
 		if tl.Items[p][s] {
 			delete(tl.Items[p], s)
 			tl.changed = true
@@ -99,7 +99,7 @@ func (f *fetcher) Fetch(_ *commands.Value, args, _ map[string]*commands.Value) *
 		}
 	}
 
-	p := args[primaryArg].GetString_()
+	p := args[primaryArg].String()
 	sMap := f.List.Items[p]
 	secondaries := make([]string, 0, len(sMap))
 	for s := range sMap {

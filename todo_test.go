@@ -1,11 +1,12 @@
 package todo
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
-	"github.com/leep-frog/commands/color"
-	"github.com/leep-frog/commands/commands"
+	"github.com/leep-frog/command"
+	"github.com/leep-frog/command/color"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -33,13 +34,13 @@ func TestLoad(t *testing.T) {
 			json: `{"Items": {"write": {"tests": true, "code": false}}, "PrimaryFormats": {"write": {"Color": "red", "Thickness": true }}}`,
 			want: &List{
 				Items: map[string]map[string]bool{
-					"write": map[string]bool{
+					"write": {
 						"tests": true,
 						"code":  false,
 					},
 				},
 				PrimaryFormats: map[string]*color.Format{
-					"write": &color.Format{
+					"write": {
 						Color:     color.Red,
 						Thickness: color.Bold,
 					},
@@ -68,52 +69,52 @@ func TestLoad(t *testing.T) {
 
 func TestExecution(t *testing.T) {
 	for _, test := range []struct {
-		name        string
-		l           *List
-		args        []string
-		wantOK      bool
-		want        *List
-		wantResp    *commands.ExecutorResponse
-		wantChanged bool
-		wantStderr  []string
-		wantStdout  []string
+		name       string
+		l          *List
+		args       []string
+		want       *List
+		wantErr    error
+		wantResp   *command.ExecuteData
+		wantStderr []string
+		wantStdout []string
+		wantData   *command.Data
 	}{
 		{
 			name:       "errors on unknown arg",
 			l:          &List{},
 			args:       []string{"uhh"},
 			want:       &List{},
-			wantStderr: []string{"extra unknown args ([uhh])"},
+			wantStderr: []string{"Unprocessed extra args: [uhh]"},
+			wantErr:    fmt.Errorf("Unprocessed extra args: [uhh]"),
 		},
 		// ListItems
 		{
 			name: "lists on nil args",
 			l: &List{
 				Items: map[string]map[string]bool{
-					"write": map[string]bool{
+					"write": {
 						"code":  false,
 						"tests": true,
 					},
-					"sleep": map[string]bool{},
+					"sleep": {},
 				},
 				PrimaryFormats: map[string]*color.Format{
-					"sleep": &color.Format{
+					"sleep": {
 						Color:     color.Blue,
 						Thickness: color.Bold,
 					},
 				},
 			},
-			wantOK: true,
 			want: &List{
 				Items: map[string]map[string]bool{
-					"write": map[string]bool{
+					"write": {
 						"code":  false,
 						"tests": true,
 					},
-					"sleep": map[string]bool{},
+					"sleep": {},
 				},
 				PrimaryFormats: map[string]*color.Format{
-					"sleep": &color.Format{
+					"sleep": {
 						Color:     color.Blue,
 						Thickness: color.Bold,
 					},
@@ -130,31 +131,30 @@ func TestExecution(t *testing.T) {
 			name: "lists on empty args",
 			l: &List{
 				Items: map[string]map[string]bool{
-					"write": map[string]bool{
+					"write": {
 						"code":  false,
 						"tests": true,
 					},
-					"sleep": map[string]bool{},
+					"sleep": {},
 				},
 				PrimaryFormats: map[string]*color.Format{
-					"sleep": &color.Format{
+					"sleep": {
 						Color:     color.Blue,
 						Thickness: color.Bold,
 					},
 				},
 			},
-			args:   []string{},
-			wantOK: true,
+			args: []string{},
 			want: &List{
 				Items: map[string]map[string]bool{
-					"write": map[string]bool{
+					"write": {
 						"code":  false,
 						"tests": true,
 					},
-					"sleep": map[string]bool{},
+					"sleep": {},
 				},
 				PrimaryFormats: map[string]*color.Format{
-					"sleep": &color.Format{
+					"sleep": {
 						Color:     color.Blue,
 						Thickness: color.Bold,
 					},
@@ -169,88 +169,123 @@ func TestExecution(t *testing.T) {
 		},
 		// AddItem
 		{
-			name:       "errors if no arguments",
-			l:          &List{},
-			args:       []string{"a"},
-			want:       &List{},
-			wantStderr: []string{`no argument provided for "primary"`},
-		},
-		{
-			name:       "errors if too many arguments",
-			l:          &List{},
-			args:       []string{"a", "write", "tests", "exclusively"},
-			want:       &List{},
-			wantStderr: []string{"extra unknown args ([exclusively])"},
-		},
-		{
-			name:   "adds primary to empty list",
-			l:      &List{},
-			args:   []string{"a", "sleep"},
-			wantOK: true,
-			want: &List{
-				Items: map[string]map[string]bool{
-					"sleep": map[string]bool{},
+			name: "errors if no arguments",
+			l:    &List{},
+			args: []string{"a"},
+			want: &List{},
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					primaryArg: command.StringValue(""),
 				},
 			},
-			wantChanged: true,
+			wantStderr: []string{"not enough arguments"},
+			wantErr:    fmt.Errorf("not enough arguments"),
 		},
 		{
-			name:   "adds primary and secondary to empty list",
-			l:      &List{},
-			args:   []string{"a", "write", "tests"},
-			wantOK: true,
+			name: "errors if too many arguments",
+			l:    &List{},
+			args: []string{"a", "write", "tests", "exclusively"},
+			want: &List{},
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					primaryArg:   command.StringValue("write"),
+					secondaryArg: command.StringValue("tests"),
+				},
+			},
+			wantStderr: []string{"Unprocessed extra args: [exclusively]"},
+			wantErr:    fmt.Errorf("Unprocessed extra args: [exclusively]"),
+		},
+		{
+			name: "adds primary to empty list",
+			l:    &List{},
+			args: []string{"a", "sleep"},
 			want: &List{
+				changed: true,
 				Items: map[string]map[string]bool{
-					"write": map[string]bool{
+					"sleep": {},
+				},
+			},
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					primaryArg:   command.StringValue("sleep"),
+					secondaryArg: command.StringValue(""),
+				},
+			},
+		},
+		{
+			name: "adds primary and secondary to empty list",
+			l:    &List{},
+			args: []string{"a", "write", "tests"},
+			want: &List{
+				changed: true,
+				Items: map[string]map[string]bool{
+					"write": {
 						"tests": true,
 					},
 				},
 			},
-			wantChanged: true,
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					primaryArg:   command.StringValue("write"),
+					secondaryArg: command.StringValue("tests"),
+				},
+			},
 		},
 		{
 			name: "adds just secondary to empty list",
 			l: &List{
 				Items: map[string]map[string]bool{
-					"write": map[string]bool{
+					"write": {
 						"code": true,
 					},
 				},
 			},
-			args:   []string{"a", "write", "tests"},
-			wantOK: true,
+			args: []string{"a", "write", "tests"},
 			want: &List{
+				changed: true,
 				Items: map[string]map[string]bool{
-					"write": map[string]bool{
+					"write": {
 						"code":  true,
 						"tests": true,
 					},
 				},
 			},
-			wantChanged: true,
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					primaryArg:   command.StringValue("write"),
+					secondaryArg: command.StringValue("tests"),
+				},
+			},
 		},
 		{
 			name: "error if primary already exists",
 			l: &List{
 				Items: map[string]map[string]bool{
-					"write": map[string]bool{},
+					"write": {},
 				},
 			},
 			args: []string{"a", "write"},
 			want: &List{
 				Items: map[string]map[string]bool{
-					"write": map[string]bool{},
+					"write": {},
+				},
+			},
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					primaryArg:   command.StringValue("write"),
+					secondaryArg: command.StringValue(""),
 				},
 			},
 			wantStderr: []string{
 				`primary item "write" already exists`,
 			},
+			wantErr: fmt.Errorf(`primary item "write" already exists`),
 		},
 		{
 			name: "error if secondary already exists",
 			l: &List{
 				Items: map[string]map[string]bool{
-					"write": map[string]bool{
+					"write": {
 						"code": true,
 					},
 				},
@@ -258,14 +293,21 @@ func TestExecution(t *testing.T) {
 			args: []string{"a", "write", "code"},
 			want: &List{
 				Items: map[string]map[string]bool{
-					"write": map[string]bool{
+					"write": {
 						"code": true,
 					},
+				},
+			},
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					primaryArg:   command.StringValue("write"),
+					secondaryArg: command.StringValue("code"),
 				},
 			},
 			wantStderr: []string{
 				`item "write", "code" already exists`,
 			},
+			wantErr: fmt.Errorf(`item "write", "code" already exists`),
 		},
 		// DeleteItem
 		{
@@ -273,28 +315,55 @@ func TestExecution(t *testing.T) {
 			l:          &List{},
 			args:       []string{"d"},
 			want:       &List{},
-			wantStderr: []string{`no argument provided for "primary"`},
+			wantStderr: []string{"not enough arguments"},
+			wantErr:    fmt.Errorf("not enough arguments"),
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					primaryArg: command.StringValue(""),
+				},
+			},
 		},
 		{
 			name:       "errors if too many arguments",
 			l:          &List{},
 			args:       []string{"d", "write", "tests", "exclusively"},
+			wantStderr: []string{"Unprocessed extra args: [exclusively]"},
+			wantErr:    fmt.Errorf("Unprocessed extra args: [exclusively]"),
 			want:       &List{},
-			wantStderr: []string{"extra unknown args ([exclusively])"},
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					primaryArg:   command.StringValue("write"),
+					secondaryArg: command.StringValue("tests"),
+				},
+			},
 		},
 		{
-			name:       "error if empty items and deleting primary",
-			l:          &List{},
-			args:       []string{"d", "write"},
-			want:       &List{},
+			name: "error if empty items and deleting primary",
+			l:    &List{},
+			args: []string{"d", "write"},
+			want: &List{},
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					primaryArg:   command.StringValue("write"),
+					secondaryArg: command.StringValue(""),
+				},
+			},
 			wantStderr: []string{"can't delete from empty list"},
+			wantErr:    fmt.Errorf("can't delete from empty list"),
 		},
 		{
-			name:       "error if empty items and deleting secondary",
-			l:          &List{},
-			args:       []string{"d", "write", "code"},
-			want:       &List{},
+			name: "error if empty items and deleting secondary",
+			l:    &List{},
+			args: []string{"d", "write", "code"},
+			want: &List{},
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					primaryArg:   command.StringValue("write"),
+					secondaryArg: command.StringValue("code"),
+				},
+			},
 			wantStderr: []string{"can't delete from empty list"},
+			wantErr:    fmt.Errorf("can't delete from empty list"),
 		},
 		{
 			name: "error if unknown primary when deleting primary",
@@ -303,8 +372,15 @@ func TestExecution(t *testing.T) {
 			},
 			args:       []string{"d", "write"},
 			wantStderr: []string{`Primary item "write" does not exist`},
+			wantErr:    fmt.Errorf(`Primary item "write" does not exist`),
 			want: &List{
 				Items: map[string]map[string]bool{},
+			},
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					primaryArg:   command.StringValue("write"),
+					secondaryArg: command.StringValue(""),
+				},
 			},
 		},
 		{
@@ -314,22 +390,36 @@ func TestExecution(t *testing.T) {
 			},
 			args:       []string{"d", "write", "code"},
 			wantStderr: []string{`Primary item "write" does not exist`},
+			wantErr:    fmt.Errorf(`Primary item "write" does not exist`),
 			want: &List{
 				Items: map[string]map[string]bool{},
+			},
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					primaryArg:   command.StringValue("write"),
+					secondaryArg: command.StringValue("code"),
+				},
 			},
 		},
 		{
 			name: "error if unknown secondary",
 			l: &List{
 				Items: map[string]map[string]bool{
-					"write": map[string]bool{},
+					"write": {},
 				},
 			},
 			args:       []string{"d", "write", "code"},
 			wantStderr: []string{`Secondary item "code" does not exist`},
+			wantErr:    fmt.Errorf(`Secondary item "code" does not exist`),
 			want: &List{
 				Items: map[string]map[string]bool{
-					"write": map[string]bool{},
+					"write": {},
+				},
+			},
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					primaryArg:   command.StringValue("write"),
+					secondaryArg: command.StringValue("code"),
 				},
 			},
 		},
@@ -337,7 +427,7 @@ func TestExecution(t *testing.T) {
 			name: "error if deleting primary that has secondaries",
 			l: &List{
 				Items: map[string]map[string]bool{
-					"write": map[string]bool{
+					"write": {
 						"code":  false,
 						"tests": true,
 					},
@@ -345,12 +435,19 @@ func TestExecution(t *testing.T) {
 			},
 			args:       []string{"d", "write"},
 			wantStderr: []string{"Can't delete primary item that still has secondary items"},
+			wantErr:    fmt.Errorf("Can't delete primary item that still has secondary items"),
 			want: &List{
 				Items: map[string]map[string]bool{
-					"write": map[string]bool{
+					"write": {
 						"code":  false,
 						"tests": true,
 					},
+				},
+			},
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					primaryArg:   command.StringValue("write"),
+					secondaryArg: command.StringValue(""),
 				},
 			},
 		},
@@ -358,156 +455,162 @@ func TestExecution(t *testing.T) {
 			name: "successfully deletes primary",
 			l: &List{
 				Items: map[string]map[string]bool{
-					"design": map[string]bool{
+					"design": {
 						"solutions": true,
 					},
-					"write": map[string]bool{},
+					"write": {},
 				},
 			},
-			args:   []string{"d", "write"},
-			wantOK: true,
+			args: []string{"d", "write"},
 			want: &List{
+				changed: true,
 				Items: map[string]map[string]bool{
-					"design": map[string]bool{
+					"design": {
 						"solutions": true,
 					},
 				},
 			},
-			wantChanged: true,
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					primaryArg:   command.StringValue("write"),
+					secondaryArg: command.StringValue(""),
+				},
+			},
 		},
 		{
 			name: "successfully deletes secondary",
 			l: &List{
 				Items: map[string]map[string]bool{
-					"write": map[string]bool{
+					"write": {
 						"code":  true,
 						"tests": true,
 					},
 				},
 			},
-			args:   []string{"d", "write", "code"},
-			wantOK: true,
+			args: []string{"d", "write", "code"},
 			want: &List{
+				changed: true,
 				Items: map[string]map[string]bool{
-					"write": map[string]bool{
+					"write": {
 						"tests": true,
 					},
 				},
 			},
-			wantChanged: true,
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					primaryArg:   command.StringValue("write"),
+					secondaryArg: command.StringValue("code"),
+				},
+			},
 		},
 		// FormatPrimary
 		{
 			name: "successfully adds format",
 			l: &List{
 				Items: map[string]map[string]bool{
-					"write": map[string]bool{
+					"write": {
 						"code":  true,
 						"tests": true,
 					},
 				},
 			},
-			args:   []string{"f", "write", "bold", string(color.Red)},
-			wantOK: true,
+			args: []string{"f", "write", "bold", string(color.Red)},
 			want: &List{
+				changed: true,
 				Items: map[string]map[string]bool{
-					"write": map[string]bool{
+					"write": {
 						"code":  true,
 						"tests": true,
 					},
 				},
 				PrimaryFormats: map[string]*color.Format{
-					"write": &color.Format{
+					"write": {
 						Thickness: color.Bold,
 						Color:     color.Red,
 					},
 				},
 			},
-			wantChanged: true,
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					primaryArg:    command.StringValue("write"),
+					color.ArgName: command.StringListValue("bold", string(color.Red)),
+				},
+			},
 		},
 		{
 			name: "successfully updates format",
 			l: &List{
 				Items: map[string]map[string]bool{
-					"write": map[string]bool{
+					"write": {
 						"code":  true,
 						"tests": true,
 					},
 				},
 				PrimaryFormats: map[string]*color.Format{
-					"write": &color.Format{
+					"write": {
 						Thickness: color.Bold,
 						Color:     color.Red,
 					},
 				},
 			},
-			args:   []string{"f", "write", "shy", string(color.Green)},
-			wantOK: true,
+			args: []string{"f", "write", "shy", string(color.Green)},
 			want: &List{
+				changed: true,
 				Items: map[string]map[string]bool{
-					"write": map[string]bool{
+					"write": {
 						"code":  true,
 						"tests": true,
 					},
 				},
 				PrimaryFormats: map[string]*color.Format{
-					"write": &color.Format{
+					"write": {
 						Color: color.Green,
 					},
 				},
 			},
-			wantChanged: true,
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					primaryArg:    command.StringValue("write"),
+					color.ArgName: command.StringListValue("shy", string(color.Green)),
+				},
+			},
 		},
 		{
 			name: "error with format",
 			l: &List{
 				Items: map[string]map[string]bool{
-					"write": map[string]bool{
+					"write": {
 						"code":  true,
 						"tests": true,
 					},
 				},
 			},
-			args:        []string{"f", "write", "crazy"},
-			wantOK:      true,
-			wantChanged: true,
+			args: []string{"f", "write", "crazy"},
 			want: &List{
 				PrimaryFormats: map[string]*color.Format{
-					"write": &color.Format{},
+					"write": nil,
 				},
 				Items: map[string]map[string]bool{
-					"write": map[string]bool{
+					"write": {
 						"code":  true,
 						"tests": true,
 					},
 				},
 			},
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					primaryArg:    command.StringValue("write"),
+					color.ArgName: command.StringListValue("crazy"),
+				},
+			},
+			wantStderr: []string{"invalid attribute: crazy"},
+			wantErr:    fmt.Errorf("invalid attribute: crazy"),
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			tcos := &commands.TestCommandOS{}
-			got, ok := commands.Execute(tcos, test.l.Command(), test.args, nil)
-			if ok != test.wantOK {
-				t.Fatalf("commands.Execute(%v) returned %v for ok; want %v", test.args, ok, test.wantOK)
-			}
-			if diff := cmp.Diff(test.wantResp, got); diff != "" {
-				t.Fatalf("Execute(%v) produced response diff (-want, +got):\n%s", test.args, diff)
-			}
-
-			if diff := cmp.Diff(test.wantStdout, tcos.GetStdout()); diff != "" {
-				t.Errorf("command.Execute(%v) produced stdout diff (-want, +got):\n%s", test.args, diff)
-			}
-			if diff := cmp.Diff(test.wantStderr, tcos.GetStderr()); diff != "" {
-				t.Errorf("command.Execute(%v) produced stderr diff (-want, +got):\n%s", test.args, diff)
-			}
-
-			if diff := cmp.Diff(test.want, test.l, cmpopts.IgnoreUnexported(List{})); diff != "" {
+			command.ExecuteTest(t, test.l.Node(), test.args, test.wantErr, nil, test.wantData, test.wantStdout, test.wantStderr)
+			if diff := cmp.Diff(test.want, test.l, cmp.AllowUnexported(List{})); diff != "" {
 				t.Fatalf("Execute(%v) produced todo list diff (-want, +got):\n%s", test.args, diff)
-			}
-
-			changed := test.l != nil && test.l.Changed()
-			if changed != test.wantChanged {
-				t.Fatalf("Execute(%v) marked Changed as %v; want %v", test.args, changed, test.wantChanged)
 			}
 		})
 	}
@@ -516,17 +619,17 @@ func TestExecution(t *testing.T) {
 func TestAutocomplete(t *testing.T) {
 	l := &List{
 		Items: map[string]map[string]bool{
-			"design": map[string]bool{
+			"design": {
 				"solutions": true,
 			},
-			"write": map[string]bool{
+			"write": {
 				"code":   false,
 				"tests":  true,
 				"things": false,
 			},
 		},
 		PrimaryFormats: map[string]*color.Format{
-			"write": &color.Format{
+			"write": {
 				Color:     color.Red,
 				Thickness: color.Bold,
 			},
@@ -610,28 +713,11 @@ func TestAutocomplete(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			suggestions := commands.Autocomplete(l.Command(), test.args, 0)
-			// Empty list is equivalent to nil.
-			if len(suggestions) == 0 {
-				suggestions = nil
-			}
-			if diff := cmp.Diff(test.want, suggestions); diff != "" {
+			suggestions := command.Autocomplete(l.Node(), test.args)
+			if diff := cmp.Diff(test.want, suggestions, cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("Complete(%v) produced diff (-want, +got):\n%s", test.args, diff)
 			}
 		})
-	}
-}
-
-func TestUsage(t *testing.T) {
-	l := &List{}
-	wantUsage := []string{
-		"a", "PRIMARY", "[", "SECONDARY", "]", "\n",
-		"d", "PRIMARY", "[", "SECONDARY", "]", "\n",
-		"f", "PRIMARY", "FORMAT", "[FORMAT ...]", "\n",
-	}
-	usage := l.Command().Usage()
-	if diff := cmp.Diff(wantUsage, usage); diff != "" {
-		t.Errorf("Usage() produced diff:\n%s", diff)
 	}
 }
 

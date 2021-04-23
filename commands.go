@@ -1,8 +1,8 @@
 package todo
 
 import (
-	"github.com/leep-frog/commands/color"
-	"github.com/leep-frog/commands/commands"
+	"github.com/leep-frog/command"
+	"github.com/leep-frog/command/color"
 )
 
 var (
@@ -10,66 +10,60 @@ var (
 	secondaryArg = "secondary"
 )
 
-func (tl *List) AddItem(cos commands.CommandOS, args, flag map[string]*commands.Value, _ *commands.OptionInfo) (*commands.ExecutorResponse, bool) {
+func (tl *List) AddItem(output command.Output, data *command.Data) error {
 	if tl.Items == nil {
 		tl.Items = map[string]map[string]bool{}
 		tl.changed = true
 	}
 
-	p := args[primaryArg].String()
+	p := data.Values[primaryArg].String()
 	if _, ok := tl.Items[p]; !ok {
 		tl.Items[p] = map[string]bool{}
 		tl.changed = true
 	}
 
-	if args[secondaryArg].Provided() {
-		s := args[secondaryArg].String()
+	if data.Values[secondaryArg].Provided() {
+		s := data.Values[secondaryArg].String()
 		if tl.Items[p][s] {
-			cos.Stderr("item %q, %q already exists", p, s)
-			return nil, false
+			return output.Stderr("item %q, %q already exists", p, s)
 		}
 		tl.Items[p][s] = true
 		tl.changed = true
 	} else if !tl.changed {
-		cos.Stderr("primary item %q already exists", p)
-		return nil, false
+		return output.Stderr("primary item %q already exists", p)
 	}
-	return nil, true
+	return nil
 }
 
-func (tl *List) DeleteItem(cos commands.CommandOS, args, flag map[string]*commands.Value, _ *commands.OptionInfo) (*commands.ExecutorResponse, bool) {
+func (tl *List) DeleteItem(output command.Output, data *command.Data) error {
 	if tl.Items == nil {
-		cos.Stderr("can't delete from empty list")
-		return nil, false
+		return output.Stderr("can't delete from empty list")
 	}
 
-	p := args[primaryArg].String()
+	p := data.Values[primaryArg].String()
 	if _, ok := tl.Items[p]; !ok {
-		cos.Stderr("Primary item %q does not exist", p)
-		return nil, false
+		return output.Stderr("Primary item %q does not exist", p)
 	}
 
 	// Delete secondary if provided
-	if args[secondaryArg].Provided() {
-		s := args[secondaryArg].String()
+	if data.Values[secondaryArg].Provided() {
+		s := data.Values[secondaryArg].String()
 		if tl.Items[p][s] {
 			delete(tl.Items[p], s)
 			tl.changed = true
-			return nil, true
+			return nil
 		} else {
-			cos.Stderr("Secondary item %q does not exist", s)
-			return nil, false
+			return output.Stderr("Secondary item %q does not exist", s)
 		}
 	}
 
 	if len(tl.Items[p]) != 0 {
-		cos.Stderr("Can't delete primary item that still has secondary items")
-		return nil, false
+		return output.Stderr("Can't delete primary item that still has secondary items")
 	}
 
 	delete(tl.Items, p)
 	tl.changed = true
-	return nil, true
+	return nil
 }
 
 // Name returns the name of the CLI.
@@ -88,67 +82,61 @@ type fetcher struct {
 	Primary bool
 }
 
-func (f *fetcher) Fetch(_ *commands.Value, args, _ map[string]*commands.Value) *commands.Completion {
+func (f *fetcher) Fetch(value *command.Value, data *command.Data) *command.Completion {
 	if f.Primary {
 		primaries := make([]string, 0, len(f.List.Items))
 		for p := range f.List.Items {
 			primaries = append(primaries, p)
 		}
-		return &commands.Completion{
+		return &command.Completion{
 			Suggestions: primaries,
 		}
 	}
 
-	p := args[primaryArg].String()
+	p := data.Values[primaryArg].String()
 	sMap := f.List.Items[p]
 	secondaries := make([]string, 0, len(sMap))
 	for s := range sMap {
 		secondaries = append(secondaries, s)
 	}
-	return &commands.Completion{
+	return &command.Completion{
 		Suggestions: secondaries,
 	}
 }
 
-func (tl *List) Command() commands.Command {
-	pf := &commands.Completor{
-		SuggestionFetcher: &fetcher{
-			List:    tl,
-			Primary: true,
-		},
-	}
-	sf := &commands.Completor{
-		SuggestionFetcher: &fetcher{List: tl},
-	}
-	return &commands.CommandBranch{
-		TerminusCommand: &commands.TerminusCommand{
-			Executor: tl.ListItems,
-		},
-		Subcommands: map[string]commands.Command{
-			// Add item
-			"a": &commands.TerminusCommand{
-				Args: []commands.Arg{
-					commands.StringArg(primaryArg, true, pf),
-					commands.StringArg(secondaryArg, false, nil),
-				},
-				Executor: tl.AddItem,
-			},
-			// Delete item
-			"d": &commands.TerminusCommand{
-				Args: []commands.Arg{
-					commands.StringArg(primaryArg, true, pf),
-					commands.StringArg(secondaryArg, false, sf),
-				},
-				Executor: tl.DeleteItem,
-			},
-			// Format items
-			"f": &commands.TerminusCommand{
-				Executor: tl.FormatPrimary,
-				Args: []commands.Arg{
-					commands.StringArg(primaryArg, true, pf),
-					color.Arg,
-				},
+func (tl *List) Node() *command.Node {
+	pf := &command.ArgOpt{
+		Completor: &command.Completor{
+			SuggestionFetcher: &fetcher{
+				List:    tl,
+				Primary: true,
 			},
 		},
 	}
+	sf := &command.ArgOpt{
+		Completor: &command.Completor{
+			SuggestionFetcher: &fetcher{List: tl},
+		},
+	}
+	return command.BranchNode(
+		map[string]*command.Node{
+			"a": command.SerialNodes(
+				command.StringNode(primaryArg, pf),
+				command.OptionalStringNode(secondaryArg, nil),
+				command.ExecutorNode(tl.AddItem),
+			),
+			"d": command.SerialNodes(
+				command.StringNode(primaryArg, pf),
+				command.OptionalStringNode(secondaryArg, sf),
+				command.ExecutorNode(tl.DeleteItem),
+			),
+			"f": command.SerialNodes(
+				command.StringNode(primaryArg, pf),
+				color.Arg,
+				command.ExecutorNode(tl.FormatPrimary),
+			),
+		},
+		command.SerialNodes(command.ExecutorNode(tl.ListItems)),
+		true,
+	)
 }

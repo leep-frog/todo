@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/leep-frog/commands/color"
-	"github.com/leep-frog/commands/commands"
+	"github.com/leep-frog/command"
+	"github.com/leep-frog/command/color"
 )
 
 const (
@@ -22,8 +22,6 @@ type List struct {
 	changed bool
 }
 
-func (tl *List) Option() *commands.Option { return nil }
-
 func (tl *List) Load(jsn string) error {
 	if jsn == "" {
 		tl = &List{}
@@ -36,7 +34,7 @@ func (tl *List) Load(jsn string) error {
 	return nil
 }
 
-func (tl *List) ListItems(cos commands.CommandOS, _, _ map[string]*commands.Value, _ *commands.OptionInfo) (*commands.ExecutorResponse, bool) {
+func (tl *List) ListItems(output command.Output, data *command.Data) error {
 	ps := make([]string, 0, len(tl.Items))
 	count := 0
 	for k, v := range tl.Items {
@@ -47,29 +45,33 @@ func (tl *List) ListItems(cos commands.CommandOS, _, _ map[string]*commands.Valu
 
 	for _, p := range ps {
 		f := tl.PrimaryFormats[p]
-		cos.Stdout(f.Format(p))
+		output.Stdout(f.Format(p))
 		ss := make([]string, 0, len(tl.Items[p]))
 		for s := range tl.Items[p] {
 			ss = append(ss, s)
 		}
 		sort.Strings(ss)
 		for _, s := range ss {
-			cos.Stdout(fmt.Sprintf("  %s", s))
+			output.Stdout(fmt.Sprintf("  %s", s))
 		}
 	}
 
-	return nil, true
+	return nil
 }
 
-func (tl *List) FormatPrimary(cos commands.CommandOS, args, flags map[string]*commands.Value, _ *commands.OptionInfo) (*commands.ExecutorResponse, bool) {
-	primary := args[primaryArg].String()
+func (tl *List) FormatPrimary(output command.Output, data *command.Data) error {
+	primary := data.Values[primaryArg].String()
 
 	if tl.PrimaryFormats == nil {
 		tl.PrimaryFormats = map[string]*color.Format{}
 	}
 
-	tl.PrimaryFormats[primary], tl.changed = color.ApplyCodes(tl.PrimaryFormats[primary], args)
-	return nil, true
+	var err error
+	if tl.PrimaryFormats[primary], err = color.ApplyCodes(tl.PrimaryFormats[primary], output, data); err != nil {
+		return err
+	}
+	tl.changed = true
+	return nil
 }
 
 func (tl *List) Changed() bool {

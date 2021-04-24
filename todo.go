@@ -10,6 +10,10 @@ import (
 	"github.com/leep-frog/command/color"
 )
 
+func CLI() *List {
+	return &List{}
+}
+
 type List struct {
 	Items map[string]map[string]bool
 

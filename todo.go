@@ -74,6 +74,8 @@ func (tl *List) FormatPrimary(output command.Output, data *command.Data) error {
 	return nil
 }
 
+func (tl *List) Setup() []string { return nil }
+
 func (tl *List) Changed() bool {
 	return tl.changed
 }

@@ -723,13 +723,8 @@ func TestAutocomplete(t *testing.T) {
 
 func TestMetadata(t *testing.T) {
 	l := &List{}
-	want := "todo-list"
+	want := "td"
 	if l.Name() != want {
 		t.Errorf("Incorrect todo list name: got %s; want %s", l.Name(), want)
-	}
-
-	want = "td"
-	if l.Alias() != want {
-		t.Errorf("Incorrect todo list alias: got %s; want %s", l.Alias(), want)
 	}
 }

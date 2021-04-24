@@ -68,11 +68,6 @@ func (tl *List) DeleteItem(output command.Output, data *command.Data) error {
 
 // Name returns the name of the CLI.
 func (tl *List) Name() string {
-	return "todo-list"
-}
-
-// Alias returns the CLI alias.
-func (tl *List) Alias() string {
 	return "td"
 }
 

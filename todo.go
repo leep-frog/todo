@@ -10,10 +10,6 @@ import (
 	"github.com/leep-frog/command/color"
 )
 
-const (
-	cacheKey = "todo-list.json"
-)
-
 type List struct {
 	Items map[string]map[string]bool
 

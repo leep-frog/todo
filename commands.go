@@ -1,8 +1,6 @@
 package todo
 
 import (
-	"fmt"
-
 	"github.com/leep-frog/command"
 	"github.com/leep-frog/command/color"
 )
@@ -13,23 +11,18 @@ var (
 )
 
 func (tl *List) AddItem(output command.Output, data *command.Data) error {
-	fmt.Println("one", tl.Items)
 	if tl.Items == nil {
 		tl.Items = map[string]map[string]bool{}
 		tl.changed = true
 	}
 
-	fmt.Println("two", tl.Items)
 	p := data.Values[primaryArg].String()
 	if _, ok := tl.Items[p]; !ok {
 		tl.Items[p] = map[string]bool{}
 		tl.changed = true
 	}
 
-	fmt.Println("three", tl.Items)
 	if data.Values[secondaryArg].Provided() {
-		fmt.Println("four", data.Values[secondaryArg].String())
-		fmt.Println("five", data.Values[primaryArg].String())
 		s := data.Values[secondaryArg].String()
 		if tl.Items[p][s] {
 			return output.Stderr("item %q, %q already exists", p, s)

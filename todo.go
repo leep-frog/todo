@@ -35,9 +35,6 @@ func (tl *List) Load(jsn string) error {
 }
 
 func (tl *List) ListItems(output command.Output, data *command.Data) error {
-	fmt.Println("okay")
-	fmt.Println(data.Values)
-	fmt.Println(tl.Items)
 	ps := make([]string, 0, len(tl.Items))
 	count := 0
 	for k, v := range tl.Items {

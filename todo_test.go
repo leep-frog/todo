@@ -169,15 +169,10 @@ func TestExecution(t *testing.T) {
 		},
 		// AddItem
 		{
-			name: "errors if no arguments",
-			l:    &List{},
-			args: []string{"a"},
-			want: &List{},
-			wantData: &command.Data{
-				Values: map[string]*command.Value{
-					primaryArg: command.StringValue(""),
-				},
-			},
+			name:       "errors if no arguments",
+			l:          &List{},
+			args:       []string{"a"},
+			want:       &List{},
 			wantStderr: []string{"not enough arguments"},
 			wantErr:    fmt.Errorf("not enough arguments"),
 		},
@@ -207,8 +202,7 @@ func TestExecution(t *testing.T) {
 			},
 			wantData: &command.Data{
 				Values: map[string]*command.Value{
-					primaryArg:   command.StringValue("sleep"),
-					secondaryArg: command.StringValue(""),
+					primaryArg: command.StringValue("sleep"),
 				},
 			},
 		},
@@ -272,8 +266,7 @@ func TestExecution(t *testing.T) {
 			},
 			wantData: &command.Data{
 				Values: map[string]*command.Value{
-					primaryArg:   command.StringValue("write"),
-					secondaryArg: command.StringValue(""),
+					primaryArg: command.StringValue("write"),
 				},
 			},
 			wantStderr: []string{
@@ -317,11 +310,6 @@ func TestExecution(t *testing.T) {
 			want:       &List{},
 			wantStderr: []string{"not enough arguments"},
 			wantErr:    fmt.Errorf("not enough arguments"),
-			wantData: &command.Data{
-				Values: map[string]*command.Value{
-					primaryArg: command.StringValue(""),
-				},
-			},
 		},
 		{
 			name:       "errors if too many arguments",
@@ -344,8 +332,7 @@ func TestExecution(t *testing.T) {
 			want: &List{},
 			wantData: &command.Data{
 				Values: map[string]*command.Value{
-					primaryArg:   command.StringValue("write"),
-					secondaryArg: command.StringValue(""),
+					primaryArg: command.StringValue("write"),
 				},
 			},
 			wantStderr: []string{"can't delete from empty list"},
@@ -378,8 +365,7 @@ func TestExecution(t *testing.T) {
 			},
 			wantData: &command.Data{
 				Values: map[string]*command.Value{
-					primaryArg:   command.StringValue("write"),
-					secondaryArg: command.StringValue(""),
+					primaryArg: command.StringValue("write"),
 				},
 			},
 		},
@@ -446,8 +432,7 @@ func TestExecution(t *testing.T) {
 			},
 			wantData: &command.Data{
 				Values: map[string]*command.Value{
-					primaryArg:   command.StringValue("write"),
-					secondaryArg: command.StringValue(""),
+					primaryArg: command.StringValue("write"),
 				},
 			},
 		},
@@ -472,8 +457,7 @@ func TestExecution(t *testing.T) {
 			},
 			wantData: &command.Data{
 				Values: map[string]*command.Value{
-					primaryArg:   command.StringValue("write"),
-					secondaryArg: command.StringValue(""),
+					primaryArg: command.StringValue("write"),
 				},
 			},
 		},

@@ -17,17 +17,15 @@ func TestLoad(t *testing.T) {
 		name    string
 		json    string
 		want    *List
-		wantErr string
+		WantErr string
 	}{
 		{
 			name: "handles empty string",
-			want: &List{},
 		},
 		{
 			name:    "errors on invalid json",
 			json:    "}",
-			want:    &List{},
-			wantErr: "failed to unmarshal todo list json",
+			WantErr: "failed to unmarshal todo list json",
 		},
 		{
 			name: "properly unmarshals",
@@ -51,16 +49,21 @@ func TestLoad(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			l := &List{}
 
-			err := l.Load(test.json)
-			if err != nil && test.wantErr == "" {
-				t.Fatalf("Load(%v) returned error (%v); want nil", test.json, err)
-			} else if err == nil && test.wantErr != "" {
-				t.Fatalf("Load(%v) returned nil; want error (%v)", test.json, test.wantErr)
-			} else if err != nil && test.wantErr != "" && !strings.Contains(err.Error(), test.wantErr) {
-				t.Fatalf("Load(%v) returned error (%v); want (%v)", test.json, err, test.wantErr)
+			want := test.want
+			if want == nil {
+				want = &List{}
 			}
 
-			if diff := cmp.Diff(test.want, l, cmpopts.IgnoreUnexported(List{})); diff != "" {
+			err := l.Load(test.json)
+			if err != nil && test.WantErr == "" {
+				t.Fatalf("Load(%v) returned error (%v); want nil", test.json, err)
+			} else if err == nil && test.WantErr != "" {
+				t.Fatalf("Load(%v) returned nil; want error (%v)", test.json, test.WantErr)
+			} else if err != nil && test.WantErr != "" && !strings.Contains(err.Error(), test.WantErr) {
+				t.Fatalf("Load(%v) returned error (%v); want (%v)", test.json, err, test.WantErr)
+			}
+
+			if diff := cmp.Diff(want, l, cmpopts.IgnoreUnexported(List{})); diff != "" {
 				t.Errorf("Load(%v) produced todo list diff (-want, +got):\n%s", test.json, diff)
 			}
 		})
@@ -69,23 +72,18 @@ func TestLoad(t *testing.T) {
 
 func TestExecution(t *testing.T) {
 	for _, test := range []struct {
-		name       string
-		l          *List
-		args       []string
-		want       *List
-		wantErr    error
-		wantResp   *command.ExecuteData
-		wantStderr []string
-		wantStdout []string
-		wantData   *command.Data
+		name string
+		l    *List
+		etc  *command.ExecuteTestCase
+		want *List
 	}{
 		{
-			name:       "errors on unknown arg",
-			l:          &List{},
-			args:       []string{"uhh"},
-			want:       &List{},
-			wantStderr: []string{"Unprocessed extra args: [uhh]"},
-			wantErr:    fmt.Errorf("Unprocessed extra args: [uhh]"),
+			name: "errors on unknown arg",
+			etc: &command.ExecuteTestCase{
+				Args:       []string{"uhh"},
+				WantStderr: []string{"Unprocessed extra args: [uhh]"},
+				WantErr:    fmt.Errorf("Unprocessed extra args: [uhh]"),
+			},
 		},
 		// ListItems
 		{
@@ -120,11 +118,13 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			wantStdout: []string{
-				color.Blue.Format(color.Bold.Format("sleep")),
-				"write",
-				"  code",
-				"  tests",
+			etc: &command.ExecuteTestCase{
+				WantStdout: []string{
+					color.Blue.Format(color.Bold.Format("sleep")),
+					"write",
+					"  code",
+					"  tests",
+				},
 			},
 		},
 		{
@@ -144,7 +144,6 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			args: []string{},
 			want: &List{
 				Items: map[string]map[string]bool{
 					"write": {
@@ -160,68 +159,73 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			wantStdout: []string{
-				color.Blue.Format(color.Bold.Format("sleep")),
-				"write",
-				"  code",
-				"  tests",
+			etc: &command.ExecuteTestCase{
+				Args: []string{},
+				WantStdout: []string{
+					color.Blue.Format(color.Bold.Format("sleep")),
+					"write",
+					"  code",
+					"  tests",
+				},
 			},
 		},
 		// AddItem
 		{
-			name:       "errors if no arguments",
-			l:          &List{},
-			args:       []string{"a"},
-			want:       &List{},
-			wantStderr: []string{"not enough arguments"},
-			wantErr:    fmt.Errorf("not enough arguments"),
+			name: "errors if no arguments",
+			etc: &command.ExecuteTestCase{
+				Args:       []string{"a"},
+				WantStderr: []string{"not enough arguments"},
+				WantErr:    fmt.Errorf("not enough arguments"),
+			},
 		},
 		{
 			name: "errors if too many arguments",
-			l:    &List{},
-			args: []string{"a", "write", "tests", "exclusively"},
-			want: &List{},
-			wantData: &command.Data{
-				Values: map[string]*command.Value{
-					primaryArg:   command.StringValue("write"),
-					secondaryArg: command.StringValue("tests"),
+			etc: &command.ExecuteTestCase{
+				Args: []string{"a", "write", "tests", "exclusively"},
+				WantData: &command.Data{
+					Values: map[string]*command.Value{
+						primaryArg:   command.StringValue("write"),
+						secondaryArg: command.StringValue("tests"),
+					},
 				},
+				WantStderr: []string{"Unprocessed extra args: [exclusively]"},
+				WantErr:    fmt.Errorf("Unprocessed extra args: [exclusively]"),
 			},
-			wantStderr: []string{"Unprocessed extra args: [exclusively]"},
-			wantErr:    fmt.Errorf("Unprocessed extra args: [exclusively]"),
 		},
 		{
 			name: "adds primary to empty list",
-			l:    &List{},
-			args: []string{"a", "sleep"},
+			etc: &command.ExecuteTestCase{
+				Args: []string{"a", "sleep"},
+				WantData: &command.Data{
+					Values: map[string]*command.Value{
+						primaryArg: command.StringValue("sleep"),
+					},
+				},
+			},
 			want: &List{
 				changed: true,
 				Items: map[string]map[string]bool{
 					"sleep": {},
 				},
 			},
-			wantData: &command.Data{
-				Values: map[string]*command.Value{
-					primaryArg: command.StringValue("sleep"),
-				},
-			},
 		},
 		{
 			name: "adds primary and secondary to empty list",
-			l:    &List{},
-			args: []string{"a", "write", "tests"},
+			etc: &command.ExecuteTestCase{
+				Args: []string{"a", "write", "tests"},
+				WantData: &command.Data{
+					Values: map[string]*command.Value{
+						primaryArg:   command.StringValue("write"),
+						secondaryArg: command.StringValue("tests"),
+					},
+				},
+			},
 			want: &List{
 				changed: true,
 				Items: map[string]map[string]bool{
 					"write": {
 						"tests": true,
 					},
-				},
-			},
-			wantData: &command.Data{
-				Values: map[string]*command.Value{
-					primaryArg:   command.StringValue("write"),
-					secondaryArg: command.StringValue("tests"),
 				},
 			},
 		},
@@ -234,7 +238,15 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			args: []string{"a", "write", "tests"},
+			etc: &command.ExecuteTestCase{
+				Args: []string{"a", "write", "tests"},
+				WantData: &command.Data{
+					Values: map[string]*command.Value{
+						primaryArg:   command.StringValue("write"),
+						secondaryArg: command.StringValue("tests"),
+					},
+				},
+			},
 			want: &List{
 				changed: true,
 				Items: map[string]map[string]bool{
@@ -242,12 +254,6 @@ func TestExecution(t *testing.T) {
 						"code":  true,
 						"tests": true,
 					},
-				},
-			},
-			wantData: &command.Data{
-				Values: map[string]*command.Value{
-					primaryArg:   command.StringValue("write"),
-					secondaryArg: command.StringValue("tests"),
 				},
 			},
 		},
@@ -258,21 +264,23 @@ func TestExecution(t *testing.T) {
 					"write": {},
 				},
 			},
-			args: []string{"a", "write"},
+			etc: &command.ExecuteTestCase{
+				Args: []string{"a", "write"},
+				WantData: &command.Data{
+					Values: map[string]*command.Value{
+						primaryArg: command.StringValue("write"),
+					},
+				},
+				WantStderr: []string{
+					`primary item "write" already exists`,
+				},
+				WantErr: fmt.Errorf(`primary item "write" already exists`),
+			},
 			want: &List{
 				Items: map[string]map[string]bool{
 					"write": {},
 				},
 			},
-			wantData: &command.Data{
-				Values: map[string]*command.Value{
-					primaryArg: command.StringValue("write"),
-				},
-			},
-			wantStderr: []string{
-				`primary item "write" already exists`,
-			},
-			wantErr: fmt.Errorf(`primary item "write" already exists`),
 		},
 		{
 			name: "error if secondary already exists",
@@ -283,7 +291,19 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			args: []string{"a", "write", "code"},
+			etc: &command.ExecuteTestCase{
+				Args: []string{"a", "write", "code"},
+				WantData: &command.Data{
+					Values: map[string]*command.Value{
+						primaryArg:   command.StringValue("write"),
+						secondaryArg: command.StringValue("code"),
+					},
+				},
+				WantStderr: []string{
+					`item "write", "code" already exists`,
+				},
+				WantErr: fmt.Errorf(`item "write", "code" already exists`),
+			},
 			want: &List{
 				Items: map[string]map[string]bool{
 					"write": {
@@ -291,82 +311,74 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			wantData: &command.Data{
-				Values: map[string]*command.Value{
-					primaryArg:   command.StringValue("write"),
-					secondaryArg: command.StringValue("code"),
-				},
-			},
-			wantStderr: []string{
-				`item "write", "code" already exists`,
-			},
-			wantErr: fmt.Errorf(`item "write", "code" already exists`),
 		},
 		// DeleteItem
 		{
-			name:       "errors if no arguments",
-			l:          &List{},
-			args:       []string{"d"},
-			want:       &List{},
-			wantStderr: []string{"not enough arguments"},
-			wantErr:    fmt.Errorf("not enough arguments"),
+			name: "errors if no arguments",
+			etc: &command.ExecuteTestCase{
+				Args:       []string{"d"},
+				WantStderr: []string{"not enough arguments"},
+				WantErr:    fmt.Errorf("not enough arguments"),
+			},
 		},
 		{
-			name:       "errors if too many arguments",
-			l:          &List{},
-			args:       []string{"d", "write", "tests", "exclusively"},
-			wantStderr: []string{"Unprocessed extra args: [exclusively]"},
-			wantErr:    fmt.Errorf("Unprocessed extra args: [exclusively]"),
-			want:       &List{},
-			wantData: &command.Data{
-				Values: map[string]*command.Value{
-					primaryArg:   command.StringValue("write"),
-					secondaryArg: command.StringValue("tests"),
+			name: "errors if too many arguments",
+			etc: &command.ExecuteTestCase{
+				Args:       []string{"d", "write", "tests", "exclusively"},
+				WantStderr: []string{"Unprocessed extra args: [exclusively]"},
+				WantErr:    fmt.Errorf("Unprocessed extra args: [exclusively]"),
+				WantData: &command.Data{
+					Values: map[string]*command.Value{
+						primaryArg:   command.StringValue("write"),
+						secondaryArg: command.StringValue("tests"),
+					},
 				},
 			},
 		},
 		{
 			name: "error if empty items and deleting primary",
-			l:    &List{},
-			args: []string{"d", "write"},
-			want: &List{},
-			wantData: &command.Data{
-				Values: map[string]*command.Value{
-					primaryArg: command.StringValue("write"),
+			etc: &command.ExecuteTestCase{
+				Args: []string{"d", "write"},
+				WantData: &command.Data{
+					Values: map[string]*command.Value{
+						primaryArg: command.StringValue("write"),
+					},
 				},
+				WantStderr: []string{"can't delete from empty list"},
+				WantErr:    fmt.Errorf("can't delete from empty list"),
 			},
-			wantStderr: []string{"can't delete from empty list"},
-			wantErr:    fmt.Errorf("can't delete from empty list"),
 		},
 		{
 			name: "error if empty items and deleting secondary",
-			l:    &List{},
-			args: []string{"d", "write", "code"},
-			want: &List{},
-			wantData: &command.Data{
-				Values: map[string]*command.Value{
-					primaryArg:   command.StringValue("write"),
-					secondaryArg: command.StringValue("code"),
+			etc: &command.ExecuteTestCase{
+				Args: []string{"d", "write", "code"},
+				WantData: &command.Data{
+					Values: map[string]*command.Value{
+						primaryArg:   command.StringValue("write"),
+						secondaryArg: command.StringValue("code"),
+					},
 				},
+				WantStderr: []string{"can't delete from empty list"},
+				WantErr:    fmt.Errorf("can't delete from empty list"),
 			},
-			wantStderr: []string{"can't delete from empty list"},
-			wantErr:    fmt.Errorf("can't delete from empty list"),
 		},
 		{
 			name: "error if unknown primary when deleting primary",
 			l: &List{
 				Items: map[string]map[string]bool{},
 			},
-			args:       []string{"d", "write"},
-			wantStderr: []string{`Primary item "write" does not exist`},
-			wantErr:    fmt.Errorf(`Primary item "write" does not exist`),
+			etc: &command.ExecuteTestCase{
+				Args:       []string{"d", "write"},
+				WantStderr: []string{`Primary item "write" does not exist`},
+				WantErr:    fmt.Errorf(`Primary item "write" does not exist`),
+				WantData: &command.Data{
+					Values: map[string]*command.Value{
+						primaryArg: command.StringValue("write"),
+					},
+				},
+			},
 			want: &List{
 				Items: map[string]map[string]bool{},
-			},
-			wantData: &command.Data{
-				Values: map[string]*command.Value{
-					primaryArg: command.StringValue("write"),
-				},
 			},
 		},
 		{
@@ -374,17 +386,19 @@ func TestExecution(t *testing.T) {
 			l: &List{
 				Items: map[string]map[string]bool{},
 			},
-			args:       []string{"d", "write", "code"},
-			wantStderr: []string{`Primary item "write" does not exist`},
-			wantErr:    fmt.Errorf(`Primary item "write" does not exist`),
+			etc: &command.ExecuteTestCase{
+				Args:       []string{"d", "write", "code"},
+				WantStderr: []string{`Primary item "write" does not exist`},
+				WantErr:    fmt.Errorf(`Primary item "write" does not exist`),
+				WantData: &command.Data{
+					Values: map[string]*command.Value{
+						primaryArg:   command.StringValue("write"),
+						secondaryArg: command.StringValue("code"),
+					},
+				},
+			},
 			want: &List{
 				Items: map[string]map[string]bool{},
-			},
-			wantData: &command.Data{
-				Values: map[string]*command.Value{
-					primaryArg:   command.StringValue("write"),
-					secondaryArg: command.StringValue("code"),
-				},
 			},
 		},
 		{
@@ -394,18 +408,20 @@ func TestExecution(t *testing.T) {
 					"write": {},
 				},
 			},
-			args:       []string{"d", "write", "code"},
-			wantStderr: []string{`Secondary item "code" does not exist`},
-			wantErr:    fmt.Errorf(`Secondary item "code" does not exist`),
+			etc: &command.ExecuteTestCase{
+				Args:       []string{"d", "write", "code"},
+				WantStderr: []string{`Secondary item "code" does not exist`},
+				WantErr:    fmt.Errorf(`Secondary item "code" does not exist`),
+				WantData: &command.Data{
+					Values: map[string]*command.Value{
+						primaryArg:   command.StringValue("write"),
+						secondaryArg: command.StringValue("code"),
+					},
+				},
+			},
 			want: &List{
 				Items: map[string]map[string]bool{
 					"write": {},
-				},
-			},
-			wantData: &command.Data{
-				Values: map[string]*command.Value{
-					primaryArg:   command.StringValue("write"),
-					secondaryArg: command.StringValue("code"),
 				},
 			},
 		},
@@ -419,20 +435,22 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			args:       []string{"d", "write"},
-			wantStderr: []string{"Can't delete primary item that still has secondary items"},
-			wantErr:    fmt.Errorf("Can't delete primary item that still has secondary items"),
+			etc: &command.ExecuteTestCase{
+				Args:       []string{"d", "write"},
+				WantStderr: []string{"Can't delete primary item that still has secondary items"},
+				WantErr:    fmt.Errorf("Can't delete primary item that still has secondary items"),
+				WantData: &command.Data{
+					Values: map[string]*command.Value{
+						primaryArg: command.StringValue("write"),
+					},
+				},
+			},
 			want: &List{
 				Items: map[string]map[string]bool{
 					"write": {
 						"code":  false,
 						"tests": true,
 					},
-				},
-			},
-			wantData: &command.Data{
-				Values: map[string]*command.Value{
-					primaryArg: command.StringValue("write"),
 				},
 			},
 		},
@@ -446,18 +464,20 @@ func TestExecution(t *testing.T) {
 					"write": {},
 				},
 			},
-			args: []string{"d", "write"},
+			etc: &command.ExecuteTestCase{
+				Args: []string{"d", "write"},
+				WantData: &command.Data{
+					Values: map[string]*command.Value{
+						primaryArg: command.StringValue("write"),
+					},
+				},
+			},
 			want: &List{
 				changed: true,
 				Items: map[string]map[string]bool{
 					"design": {
 						"solutions": true,
 					},
-				},
-			},
-			wantData: &command.Data{
-				Values: map[string]*command.Value{
-					primaryArg: command.StringValue("write"),
 				},
 			},
 		},
@@ -471,19 +491,21 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			args: []string{"d", "write", "code"},
+			etc: &command.ExecuteTestCase{
+				Args: []string{"d", "write", "code"},
+				WantData: &command.Data{
+					Values: map[string]*command.Value{
+						primaryArg:   command.StringValue("write"),
+						secondaryArg: command.StringValue("code"),
+					},
+				},
+			},
 			want: &List{
 				changed: true,
 				Items: map[string]map[string]bool{
 					"write": {
 						"tests": true,
 					},
-				},
-			},
-			wantData: &command.Data{
-				Values: map[string]*command.Value{
-					primaryArg:   command.StringValue("write"),
-					secondaryArg: command.StringValue("code"),
 				},
 			},
 		},
@@ -498,7 +520,15 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			args: []string{"f", "write", "bold", string(color.Red)},
+			etc: &command.ExecuteTestCase{
+				Args: []string{"f", "write", "bold", string(color.Red)},
+				WantData: &command.Data{
+					Values: map[string]*command.Value{
+						primaryArg:    command.StringValue("write"),
+						color.ArgName: command.StringListValue("bold", string(color.Red)),
+					},
+				},
+			},
 			want: &List{
 				changed: true,
 				Items: map[string]map[string]bool{
@@ -512,12 +542,6 @@ func TestExecution(t *testing.T) {
 						Thickness: color.Bold,
 						Color:     color.Red,
 					},
-				},
-			},
-			wantData: &command.Data{
-				Values: map[string]*command.Value{
-					primaryArg:    command.StringValue("write"),
-					color.ArgName: command.StringListValue("bold", string(color.Red)),
 				},
 			},
 		},
@@ -537,7 +561,15 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			args: []string{"f", "write", "shy", string(color.Green)},
+			etc: &command.ExecuteTestCase{
+				Args: []string{"f", "write", "shy", string(color.Green)},
+				WantData: &command.Data{
+					Values: map[string]*command.Value{
+						primaryArg:    command.StringValue("write"),
+						color.ArgName: command.StringListValue("shy", string(color.Green)),
+					},
+				},
+			},
 			want: &List{
 				changed: true,
 				Items: map[string]map[string]bool{
@@ -552,12 +584,6 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			wantData: &command.Data{
-				Values: map[string]*command.Value{
-					primaryArg:    command.StringValue("write"),
-					color.ArgName: command.StringListValue("shy", string(color.Green)),
-				},
-			},
 		},
 		{
 			name: "error with format",
@@ -569,7 +595,17 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			args: []string{"f", "write", "crazy"},
+			etc: &command.ExecuteTestCase{
+				Args: []string{"f", "write", "crazy"},
+				WantData: &command.Data{
+					Values: map[string]*command.Value{
+						primaryArg:    command.StringValue("write"),
+						color.ArgName: command.StringListValue("crazy"),
+					},
+				},
+				WantStderr: []string{"invalid attribute: crazy"},
+				WantErr:    fmt.Errorf("invalid attribute: crazy"),
+			},
 			want: &List{
 				PrimaryFormats: map[string]*color.Format{
 					"write": nil,
@@ -581,20 +617,19 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			wantData: &command.Data{
-				Values: map[string]*command.Value{
-					primaryArg:    command.StringValue("write"),
-					color.ArgName: command.StringListValue("crazy"),
-				},
-			},
-			wantStderr: []string{"invalid attribute: crazy"},
-			wantErr:    fmt.Errorf("invalid attribute: crazy"),
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			command.ExecuteTest(t, test.l.Node(), test.args, test.wantErr, nil, test.wantData, test.wantStdout, test.wantStderr)
+			if test.l == nil {
+				test.l = &List{}
+			}
+			if test.want == nil {
+				test.want = &List{}
+			}
+			test.etc.Node = test.l.Node()
+			command.ExecuteTest(t, test.etc, nil)
 			if diff := cmp.Diff(test.want, test.l, cmp.AllowUnexported(List{})); diff != "" {
-				t.Fatalf("Execute(%v) produced todo list diff (-want, +got):\n%s", test.args, diff)
+				t.Fatalf("Execute(%v) produced todo list diff (-want, +got):\n%s", test.etc.Args, diff)
 			}
 		})
 	}
@@ -622,85 +657,155 @@ func TestAutocomplete(t *testing.T) {
 
 	for _, test := range []struct {
 		name string
-		args []string
-		want []string
+		ctc  *command.CompleteTestCase
 	}{
 		{
 			name: "first arg suggests all options",
-			want: []string{
-				"a",
-				"d",
-				"f",
+			ctc: &command.CompleteTestCase{
+				Want: []string{
+					"a",
+					"d",
+					"f",
+				},
 			},
 		},
 		{
 			name: "suggests nothing if unknown subcommand",
-			args: []string{"z", ""},
+			ctc: &command.CompleteTestCase{
+				Args: []string{"z", ""},
+			},
 		},
 		// AddItems
 		{
 			name: "add suggests all primaries",
-			args: []string{"a", ""},
-			want: []string{
-				"design",
-				"write",
+			ctc: &command.CompleteTestCase{
+				Args: []string{"a", ""},
+				Want: []string{
+					"design",
+					"write",
+				},
+				WantData: &command.Data{
+					Values: map[string]*command.Value{
+						primaryArg: command.StringValue(""),
+					},
+				},
 			},
 		},
 		{
 			name: "add suggests no secondaries",
-			args: []string{"a", "write", ""},
+			ctc: &command.CompleteTestCase{
+				Args: []string{"a", "write", ""},
+				WantData: &command.Data{
+					Values: map[string]*command.Value{
+						primaryArg:   command.StringValue("write"),
+						secondaryArg: command.StringValue(""),
+					},
+				},
+			},
 		},
 		{
 			name: "add handles unknown primary",
-			args: []string{"a", "huh", ""},
+			ctc: &command.CompleteTestCase{
+				Args: []string{"a", "huh", ""},
+				WantData: &command.Data{
+					Values: map[string]*command.Value{
+						primaryArg:   command.StringValue("huh"),
+						secondaryArg: command.StringValue(""),
+					},
+				},
+			},
 		},
 		// DeleteItem
 		{
 			name: "delete suggests all primaries",
-			args: []string{"d", ""},
-			want: []string{
-				"design",
-				"write",
+			ctc: &command.CompleteTestCase{
+				Args: []string{"d", ""},
+				Want: []string{
+					"design",
+					"write",
+				},
+				WantData: &command.Data{
+					Values: map[string]*command.Value{
+						primaryArg: command.StringValue(""),
+					},
+				},
 			},
 		},
 		{
 			name: "delete suggests secondaries",
-			args: []string{"d", "write", ""},
-			want: []string{
-				"code",
-				"tests",
-				"things",
+			ctc: &command.CompleteTestCase{
+				Args: []string{"d", "write", ""},
+				Want: []string{
+					"code",
+					"tests",
+					"things",
+				},
+				WantData: &command.Data{
+					Values: map[string]*command.Value{
+						primaryArg:   command.StringValue("write"),
+						secondaryArg: command.StringValue(""),
+					},
+				},
 			},
 		},
 		{
 			name: "delete handles unknown primary",
-			args: []string{"a", "huh", ""},
+			ctc: &command.CompleteTestCase{
+				Args: []string{"a", "huh", ""},
+				WantData: &command.Data{
+					Values: map[string]*command.Value{
+						primaryArg:   command.StringValue("huh"),
+						secondaryArg: command.StringValue(""),
+					},
+				},
+			},
 		},
 		// FormatPrimary
 		{
 			name: "format suggests all primaries",
-			args: []string{"f", ""},
-			want: []string{
-				"design",
-				"write",
+			ctc: &command.CompleteTestCase{
+				Args: []string{"f", ""},
+				Want: []string{
+					"design",
+					"write",
+				},
+				WantData: &command.Data{
+					Values: map[string]*command.Value{
+						primaryArg: command.StringValue(""),
+					},
+				},
 			},
 		},
 		{
 			name: "format suggests no secondaries",
-			args: []string{"f", "write", ""},
-			want: color.Attributes(),
+			ctc: &command.CompleteTestCase{
+				Args: []string{"f", "write", ""},
+				Want: color.Attributes(),
+				WantData: &command.Data{
+					Values: map[string]*command.Value{
+						primaryArg: command.StringValue("write"),
+						"format":   command.StringListValue(""),
+					},
+				},
+			},
 		},
 		{
 			name: "format handles unknown primary",
-			args: []string{"f", "uhh", ""},
-			want: color.Attributes(),
+			ctc: &command.CompleteTestCase{
+				Args: []string{"f", "uhh", ""},
+				Want: color.Attributes(),
+				WantData: &command.Data{
+					Values: map[string]*command.Value{
+						primaryArg: command.StringValue("uhh"),
+						"format":   command.StringListValue(""),
+					},
+				},
+			},
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			suggestions := command.Autocomplete(l.Node(), test.args)
-			if diff := cmp.Diff(test.want, suggestions, cmpopts.EquateEmpty()); diff != "" {
-				t.Errorf("Complete(%v) produced diff (-want, +got):\n%s", test.args, diff)
-			}
+			test.ctc.Node = l.Node()
+			command.CompleteTest(t, test.ctc, nil)
 		})
 	}
 }

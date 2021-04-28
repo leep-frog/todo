@@ -103,21 +103,6 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			want: &List{
-				Items: map[string]map[string]bool{
-					"write": {
-						"code":  false,
-						"tests": true,
-					},
-					"sleep": {},
-				},
-				PrimaryFormats: map[string]*color.Format{
-					"sleep": {
-						Color:     color.Blue,
-						Thickness: color.Bold,
-					},
-				},
-			},
 			etc: &command.ExecuteTestCase{
 				WantStdout: []string{
 					color.Blue.Format(color.Bold.Format("sleep")),
@@ -130,21 +115,6 @@ func TestExecution(t *testing.T) {
 		{
 			name: "lists on empty args",
 			l: &List{
-				Items: map[string]map[string]bool{
-					"write": {
-						"code":  false,
-						"tests": true,
-					},
-					"sleep": {},
-				},
-				PrimaryFormats: map[string]*color.Format{
-					"sleep": {
-						Color:     color.Blue,
-						Thickness: color.Bold,
-					},
-				},
-			},
-			want: &List{
 				Items: map[string]map[string]bool{
 					"write": {
 						"code":  false,
@@ -276,11 +246,6 @@ func TestExecution(t *testing.T) {
 				},
 				WantErr: fmt.Errorf(`primary item "write" already exists`),
 			},
-			want: &List{
-				Items: map[string]map[string]bool{
-					"write": {},
-				},
-			},
 		},
 		{
 			name: "error if secondary already exists",
@@ -303,13 +268,6 @@ func TestExecution(t *testing.T) {
 					`item "write", "code" already exists`,
 				},
 				WantErr: fmt.Errorf(`item "write", "code" already exists`),
-			},
-			want: &List{
-				Items: map[string]map[string]bool{
-					"write": {
-						"code": true,
-					},
-				},
 			},
 		},
 		// DeleteItem
@@ -377,9 +335,6 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			want: &List{
-				Items: map[string]map[string]bool{},
-			},
 		},
 		{
 			name: "error if unknown primary when deleting secondary",
@@ -396,9 +351,6 @@ func TestExecution(t *testing.T) {
 						secondaryArg: command.StringValue("code"),
 					},
 				},
-			},
-			want: &List{
-				Items: map[string]map[string]bool{},
 			},
 		},
 		{
@@ -419,11 +371,6 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			want: &List{
-				Items: map[string]map[string]bool{
-					"write": {},
-				},
-			},
 		},
 		{
 			name: "error if deleting primary that has secondaries",
@@ -442,14 +389,6 @@ func TestExecution(t *testing.T) {
 				WantData: &command.Data{
 					Values: map[string]*command.Value{
 						primaryArg: command.StringValue("write"),
-					},
-				},
-			},
-			want: &List{
-				Items: map[string]map[string]bool{
-					"write": {
-						"code":  false,
-						"tests": true,
 					},
 				},
 			},
@@ -606,31 +545,15 @@ func TestExecution(t *testing.T) {
 				WantStderr: []string{"invalid attribute: crazy"},
 				WantErr:    fmt.Errorf("invalid attribute: crazy"),
 			},
-			want: &List{
-				PrimaryFormats: map[string]*color.Format{
-					"write": nil,
-				},
-				Items: map[string]map[string]bool{
-					"write": {
-						"code":  true,
-						"tests": true,
-					},
-				},
-			},
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			if test.l == nil {
 				test.l = &List{}
 			}
-			if test.want == nil {
-				test.want = &List{}
-			}
 			test.etc.Node = test.l.Node()
 			command.ExecuteTest(t, test.etc, nil)
-			if diff := cmp.Diff(test.want, test.l, cmp.AllowUnexported(List{})); diff != "" {
-				t.Fatalf("Execute(%v) produced todo list diff (-want, +got):\n%s", test.etc.Args, diff)
-			}
+			command.ChangeTest(t, test.want, test.l, cmp.AllowUnexported(List{}))
 		})
 	}
 }

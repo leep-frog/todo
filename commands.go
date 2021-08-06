@@ -5,7 +5,7 @@ import (
 	"github.com/leep-frog/command/color"
 )
 
-var (
+const (
 	primaryArg   = "primary"
 	secondaryArg = "secondary"
 )

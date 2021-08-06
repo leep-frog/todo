@@ -595,14 +595,14 @@ func TestAutocomplete(t *testing.T) {
 		{
 			name: "suggests nothing if unknown subcommand",
 			ctc: &command.CompleteTestCase{
-				Args: []string{"z", ""},
+				Args: "td z ",
 			},
 		},
 		// AddItems
 		{
 			name: "add suggests all primaries",
 			ctc: &command.CompleteTestCase{
-				Args: []string{"a", ""},
+				Args: "td a ",
 				Want: []string{
 					"design",
 					"write",
@@ -617,7 +617,7 @@ func TestAutocomplete(t *testing.T) {
 		{
 			name: "add suggests no secondaries",
 			ctc: &command.CompleteTestCase{
-				Args: []string{"a", "write", ""},
+				Args: "td a write ",
 				WantData: &command.Data{
 					Values: map[string]*command.Value{
 						primaryArg:   command.StringValue("write"),
@@ -629,7 +629,7 @@ func TestAutocomplete(t *testing.T) {
 		{
 			name: "add handles unknown primary",
 			ctc: &command.CompleteTestCase{
-				Args: []string{"a", "huh", ""},
+				Args: "td a huh ",
 				WantData: &command.Data{
 					Values: map[string]*command.Value{
 						primaryArg:   command.StringValue("huh"),
@@ -642,7 +642,7 @@ func TestAutocomplete(t *testing.T) {
 		{
 			name: "delete suggests all primaries",
 			ctc: &command.CompleteTestCase{
-				Args: []string{"d", ""},
+				Args: "td d ",
 				Want: []string{
 					"design",
 					"write",
@@ -657,7 +657,7 @@ func TestAutocomplete(t *testing.T) {
 		{
 			name: "delete suggests secondaries",
 			ctc: &command.CompleteTestCase{
-				Args: []string{"d", "write", ""},
+				Args: "td d write ",
 				Want: []string{
 					"code",
 					"tests",
@@ -674,7 +674,7 @@ func TestAutocomplete(t *testing.T) {
 		{
 			name: "delete handles unknown primary",
 			ctc: &command.CompleteTestCase{
-				Args: []string{"a", "huh", ""},
+				Args: "td a huh ",
 				WantData: &command.Data{
 					Values: map[string]*command.Value{
 						primaryArg:   command.StringValue("huh"),
@@ -687,7 +687,7 @@ func TestAutocomplete(t *testing.T) {
 		{
 			name: "format suggests all primaries",
 			ctc: &command.CompleteTestCase{
-				Args: []string{"f", ""},
+				Args: "td f ",
 				Want: []string{
 					"design",
 					"write",
@@ -702,7 +702,7 @@ func TestAutocomplete(t *testing.T) {
 		{
 			name: "format suggests no secondaries",
 			ctc: &command.CompleteTestCase{
-				Args: []string{"f", "write", ""},
+				Args: "td f write ",
 				Want: color.Attributes(),
 				WantData: &command.Data{
 					Values: map[string]*command.Value{
@@ -715,7 +715,7 @@ func TestAutocomplete(t *testing.T) {
 		{
 			name: "format handles unknown primary",
 			ctc: &command.CompleteTestCase{
-				Args: []string{"f", "uhh", ""},
+				Args: "td f uhh ",
 				Want: color.Attributes(),
 				WantData: &command.Data{
 					Values: map[string]*command.Value{

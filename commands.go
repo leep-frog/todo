@@ -100,24 +100,20 @@ func (f *fetcher) Fetch(value *command.Value, data *command.Data) *command.Compl
 }
 
 func (tl *List) Node() *command.Node {
-	pf := &command.ArgOpt{
-		Completor: &command.Completor{
-			SuggestionFetcher: &fetcher{
-				List:    tl,
-				Primary: true,
-			},
+	pf := &command.Completor{
+		SuggestionFetcher: &fetcher{
+			List:    tl,
+			Primary: true,
 		},
 	}
-	sf := &command.ArgOpt{
-		Completor: &command.Completor{
-			SuggestionFetcher: &fetcher{List: tl},
-		},
+	sf := &command.Completor{
+		SuggestionFetcher: &fetcher{List: tl},
 	}
 	return command.BranchNode(
 		map[string]*command.Node{
 			"a": command.SerialNodes(
 				command.StringNode(primaryArg, pf),
-				command.OptionalStringNode(secondaryArg, nil),
+				command.OptionalStringNode(secondaryArg),
 				command.ExecutorNode(tl.AddItem),
 			),
 			"d": command.SerialNodes(

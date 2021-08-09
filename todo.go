@@ -60,7 +60,7 @@ func (tl *List) ListItems(output command.Output, data *command.Data) error {
 }
 
 func (tl *List) FormatPrimary(output command.Output, data *command.Data) error {
-	primary := data.Values[primaryArg].String()
+	primary := data.String(primaryArg)
 
 	if tl.PrimaryFormats == nil {
 		tl.PrimaryFormats = map[string]*color.Format{}

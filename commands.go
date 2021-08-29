@@ -25,12 +25,12 @@ func (tl *List) AddItem(output command.Output, data *command.Data) error {
 	if data.HasArg(secondaryArg) {
 		s := data.String(secondaryArg)
 		if tl.Items[p][s] {
-			return output.Stderr("item %q, %q already exists", p, s)
+			return output.Stderrf("item %q, %q already exists", p, s)
 		}
 		tl.Items[p][s] = true
 		tl.changed = true
 	} else if !tl.changed {
-		return output.Stderr("primary item %q already exists", p)
+		return output.Stderrf("primary item %q already exists", p)
 	}
 	return nil
 }
@@ -42,7 +42,7 @@ func (tl *List) DeleteItem(output command.Output, data *command.Data) error {
 
 	p := data.String(primaryArg)
 	if _, ok := tl.Items[p]; !ok {
-		return output.Stderr("Primary item %q does not exist", p)
+		return output.Stderrf("Primary item %q does not exist", p)
 	}
 
 	// Delete secondary if provided
@@ -53,7 +53,7 @@ func (tl *List) DeleteItem(output command.Output, data *command.Data) error {
 			tl.changed = true
 			return nil
 		} else {
-			return output.Stderr("Secondary item %q does not exist", s)
+			return output.Stderrf("Secondary item %q does not exist", s)
 		}
 	}
 

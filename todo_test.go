@@ -516,7 +516,7 @@ func TestExecution(t *testing.T) {
 				test.l = &List{}
 			}
 			test.etc.Node = test.l.Node()
-			command.ExecuteTest(t, test.etc, nil)
+			command.ExecuteTest(t, test.etc)
 			command.ChangeTest(t, test.want, test.l, cmp.AllowUnexported(List{}))
 		})
 	}
@@ -674,7 +674,7 @@ func TestAutocomplete(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			test.ctc.Node = l.Node()
-			command.CompleteTest(t, test.ctc, nil)
+			command.CompleteTest(t, test.ctc)
 		})
 	}
 }

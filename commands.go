@@ -6,8 +6,10 @@ import (
 )
 
 const (
-	primaryArg   = "primary"
-	secondaryArg = "secondary"
+	primaryArg    = "primary"
+	primaryDesc   = "Primary list"
+	secondaryArg  = "secondary"
+	secondaryDesc = "Secondary list"
 )
 
 func (tl *List) AddItem(output command.Output, data *command.Data) error {
@@ -112,17 +114,17 @@ func (tl *List) Node() *command.Node {
 	return command.BranchNode(
 		map[string]*command.Node{
 			"a": command.SerialNodes(
-				command.StringNode(primaryArg, pf),
-				command.OptionalStringNode(secondaryArg),
+				command.StringNode(primaryArg, primaryDesc, pf),
+				command.OptionalStringNode(secondaryArg, secondaryDesc),
 				command.ExecutorNode(tl.AddItem),
 			),
 			"d": command.SerialNodes(
-				command.StringNode(primaryArg, pf),
-				command.OptionalStringNode(secondaryArg, sf),
+				command.StringNode(primaryArg, primaryDesc, pf),
+				command.OptionalStringNode(secondaryArg, secondaryDesc, sf),
 				command.ExecutorNode(tl.DeleteItem),
 			),
 			"f": command.SerialNodes(
-				command.StringNode(primaryArg, pf),
+				command.StringNode(primaryArg, primaryDesc, pf),
 				color.Arg,
 				command.ExecutorNode(tl.FormatPrimary),
 			),

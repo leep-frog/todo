@@ -144,8 +144,8 @@ func TestExecution(t *testing.T) {
 			name: "errors if no arguments",
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"a"},
-				WantStderr: []string{"not enough arguments"},
-				WantErr:    fmt.Errorf("not enough arguments"),
+				WantStderr: []string{`Argument "primary" requires at least 1 argument, got 0`},
+				WantErr:    fmt.Errorf(`Argument "primary" requires at least 1 argument, got 0`),
 			},
 		},
 		{
@@ -263,8 +263,8 @@ func TestExecution(t *testing.T) {
 			name: "errors if no arguments",
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"d"},
-				WantStderr: []string{"not enough arguments"},
-				WantErr:    fmt.Errorf("not enough arguments"),
+				WantStderr: []string{`Argument "primary" requires at least 1 argument, got 0`},
+				WantErr:    fmt.Errorf(`Argument "primary" requires at least 1 argument, got 0`),
 			},
 		},
 		{

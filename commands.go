@@ -79,7 +79,7 @@ type fetcher struct {
 	Primary bool
 }
 
-func (f *fetcher) Fetch(value *command.Value, data *command.Data) *command.Completion {
+func (f *fetcher) Fetch(value *command.Value, data *command.Data) (*command.Completion, error) {
 	if f.Primary {
 		primaries := make([]string, 0, len(f.List.Items))
 		for p := range f.List.Items {
@@ -87,7 +87,7 @@ func (f *fetcher) Fetch(value *command.Value, data *command.Data) *command.Compl
 		}
 		return &command.Completion{
 			Suggestions: primaries,
-		}
+		}, nil
 	}
 
 	p := data.String(primaryArg)
@@ -98,7 +98,7 @@ func (f *fetcher) Fetch(value *command.Value, data *command.Data) *command.Compl
 	}
 	return &command.Completion{
 		Suggestions: secondaries,
-	}
+	}, nil
 }
 
 func (tl *List) Node() *command.Node {

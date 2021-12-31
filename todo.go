@@ -34,7 +34,7 @@ func (tl *List) Load(jsn string) error {
 	return nil
 }
 
-func (tl *List) ListItems(output command.Output, data *command.Data) error {
+func (tl *List) ListItems(output command.Output, data *command.Data) {
 	ps := make([]string, 0, len(tl.Items))
 	count := 0
 	for k, v := range tl.Items {
@@ -55,8 +55,6 @@ func (tl *List) ListItems(output command.Output, data *command.Data) error {
 			output.Stdout(fmt.Sprintf("  %s", s))
 		}
 	}
-
-	return nil
 }
 
 func (tl *List) FormatPrimary(output command.Output, data *command.Data) error {

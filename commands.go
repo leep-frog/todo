@@ -116,17 +116,17 @@ func (tl *List) Node() *command.Node {
 			"a": command.SerialNodes(
 				command.StringNode(primaryArg, primaryDesc, pf),
 				command.OptionalStringNode(secondaryArg, secondaryDesc),
-				command.ExecutorNode(tl.AddItem),
+				command.ExecuteErrNode(tl.AddItem),
 			),
 			"d": command.SerialNodes(
 				command.StringNode(primaryArg, primaryDesc, pf),
 				command.OptionalStringNode(secondaryArg, secondaryDesc, sf),
-				command.ExecutorNode(tl.DeleteItem),
+				command.ExecuteErrNode(tl.DeleteItem),
 			),
 			"f": command.SerialNodes(
 				command.StringNode(primaryArg, primaryDesc, pf),
 				color.Arg,
-				command.ExecutorNode(tl.FormatPrimary),
+				command.ExecuteErrNode(tl.FormatPrimary),
 			),
 		},
 		command.SerialNodes(command.ExecutorNode(tl.ListItems)),

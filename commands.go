@@ -130,6 +130,5 @@ func (tl *List) Node() *command.Node {
 			),
 		},
 		command.SerialNodes(command.ExecutorNode(tl.ListItems)),
-		true,
 	)
 }

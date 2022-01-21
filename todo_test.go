@@ -153,9 +153,9 @@ func TestExecution(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args: []string{"a", "write", "tests", "exclusively"},
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						primaryArg:   command.StringValue("write"),
-						secondaryArg: command.StringValue("tests"),
+					Values: map[string]interface{}{
+						primaryArg:   "write",
+						secondaryArg: "tests",
 					},
 				},
 				WantStderr: []string{"Unprocessed extra args: [exclusively]"},
@@ -167,8 +167,8 @@ func TestExecution(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args: []string{"a", "sleep"},
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						primaryArg: command.StringValue("sleep"),
+					Values: map[string]interface{}{
+						primaryArg: "sleep",
 					},
 				},
 			},
@@ -184,9 +184,9 @@ func TestExecution(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args: []string{"a", "write", "tests"},
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						primaryArg:   command.StringValue("write"),
-						secondaryArg: command.StringValue("tests"),
+					Values: map[string]interface{}{
+						primaryArg:   "write",
+						secondaryArg: "tests",
 					},
 				},
 			},
@@ -211,9 +211,9 @@ func TestExecution(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args: []string{"a", "write", "tests"},
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						primaryArg:   command.StringValue("write"),
-						secondaryArg: command.StringValue("tests"),
+					Values: map[string]interface{}{
+						primaryArg:   "write",
+						secondaryArg: "tests",
 					},
 				},
 			},
@@ -237,8 +237,8 @@ func TestExecution(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args: []string{"a", "write"},
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						primaryArg: command.StringValue("write"),
+					Values: map[string]interface{}{
+						primaryArg: "write",
 					},
 				},
 				WantStderr: []string{
@@ -259,9 +259,9 @@ func TestExecution(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args: []string{"a", "write", "code"},
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						primaryArg:   command.StringValue("write"),
-						secondaryArg: command.StringValue("code"),
+					Values: map[string]interface{}{
+						primaryArg:   "write",
+						secondaryArg: "code",
 					},
 				},
 				WantStderr: []string{
@@ -286,9 +286,9 @@ func TestExecution(t *testing.T) {
 				WantStderr: []string{"Unprocessed extra args: [exclusively]"},
 				WantErr:    fmt.Errorf("Unprocessed extra args: [exclusively]"),
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						primaryArg:   command.StringValue("write"),
-						secondaryArg: command.StringValue("tests"),
+					Values: map[string]interface{}{
+						primaryArg:   "write",
+						secondaryArg: "tests",
 					},
 				},
 			},
@@ -298,8 +298,8 @@ func TestExecution(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args: []string{"d", "write"},
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						primaryArg: command.StringValue("write"),
+					Values: map[string]interface{}{
+						primaryArg: "write",
 					},
 				},
 				WantStderr: []string{"can't delete from empty list"},
@@ -311,9 +311,9 @@ func TestExecution(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args: []string{"d", "write", "code"},
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						primaryArg:   command.StringValue("write"),
-						secondaryArg: command.StringValue("code"),
+					Values: map[string]interface{}{
+						primaryArg:   "write",
+						secondaryArg: "code",
 					},
 				},
 				WantStderr: []string{"can't delete from empty list"},
@@ -330,8 +330,8 @@ func TestExecution(t *testing.T) {
 				WantStderr: []string{`Primary item "write" does not exist`},
 				WantErr:    fmt.Errorf(`Primary item "write" does not exist`),
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						primaryArg: command.StringValue("write"),
+					Values: map[string]interface{}{
+						primaryArg: "write",
 					},
 				},
 			},
@@ -346,9 +346,9 @@ func TestExecution(t *testing.T) {
 				WantStderr: []string{`Primary item "write" does not exist`},
 				WantErr:    fmt.Errorf(`Primary item "write" does not exist`),
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						primaryArg:   command.StringValue("write"),
-						secondaryArg: command.StringValue("code"),
+					Values: map[string]interface{}{
+						primaryArg:   "write",
+						secondaryArg: "code",
 					},
 				},
 			},
@@ -365,9 +365,9 @@ func TestExecution(t *testing.T) {
 				WantStderr: []string{`Secondary item "code" does not exist`},
 				WantErr:    fmt.Errorf(`Secondary item "code" does not exist`),
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						primaryArg:   command.StringValue("write"),
-						secondaryArg: command.StringValue("code"),
+					Values: map[string]interface{}{
+						primaryArg:   "write",
+						secondaryArg: "code",
 					},
 				},
 			},
@@ -387,8 +387,8 @@ func TestExecution(t *testing.T) {
 				WantStderr: []string{"Can't delete primary item that still has secondary items"},
 				WantErr:    fmt.Errorf("Can't delete primary item that still has secondary items"),
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						primaryArg: command.StringValue("write"),
+					Values: map[string]interface{}{
+						primaryArg: "write",
 					},
 				},
 			},
@@ -406,8 +406,8 @@ func TestExecution(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args: []string{"d", "write"},
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						primaryArg: command.StringValue("write"),
+					Values: map[string]interface{}{
+						primaryArg: "write",
 					},
 				},
 			},
@@ -433,9 +433,9 @@ func TestExecution(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args: []string{"d", "write", "code"},
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						primaryArg:   command.StringValue("write"),
-						secondaryArg: command.StringValue("code"),
+					Values: map[string]interface{}{
+						primaryArg:   "write",
+						secondaryArg: "code",
 					},
 				},
 			},
@@ -462,9 +462,9 @@ func TestExecution(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args: []string{"f", "write", "bold", string(color.Red)},
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						primaryArg:    command.StringValue("write"),
-						color.ArgName: command.StringListValue("bold", string(color.Red)),
+					Values: map[string]interface{}{
+						primaryArg:    "write",
+						color.ArgName: []string{"bold", string(color.Red)},
 					},
 				},
 			},
@@ -503,9 +503,9 @@ func TestExecution(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args: []string{"f", "write", "shy", string(color.Green)},
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						primaryArg:    command.StringValue("write"),
-						color.ArgName: command.StringListValue("shy", string(color.Green)),
+					Values: map[string]interface{}{
+						primaryArg:    "write",
+						color.ArgName: []string{"shy", string(color.Green)},
 					},
 				},
 			},
@@ -537,9 +537,9 @@ func TestExecution(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args: []string{"f", "write", "crazy"},
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						primaryArg:    command.StringValue("write"),
-						color.ArgName: command.StringListValue("crazy"),
+					Values: map[string]interface{}{
+						primaryArg:    "write",
+						color.ArgName: []string{"crazy"},
 					},
 				},
 				WantStderr: []string{"invalid attribute: crazy"},
@@ -609,8 +609,8 @@ func TestAutocomplete(t *testing.T) {
 					"write",
 				},
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						primaryArg: command.StringValue(""),
+					Values: map[string]interface{}{
+						primaryArg: "",
 					},
 				},
 			},
@@ -620,9 +620,9 @@ func TestAutocomplete(t *testing.T) {
 			ctc: &command.CompleteTestCase{
 				Args: "td a write ",
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						primaryArg:   command.StringValue("write"),
-						secondaryArg: command.StringValue(""),
+					Values: map[string]interface{}{
+						primaryArg:   "write",
+						secondaryArg: "",
 					},
 				},
 			},
@@ -632,9 +632,9 @@ func TestAutocomplete(t *testing.T) {
 			ctc: &command.CompleteTestCase{
 				Args: "td a huh ",
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						primaryArg:   command.StringValue("huh"),
-						secondaryArg: command.StringValue(""),
+					Values: map[string]interface{}{
+						primaryArg:   "huh",
+						secondaryArg: "",
 					},
 				},
 			},
@@ -649,8 +649,8 @@ func TestAutocomplete(t *testing.T) {
 					"write",
 				},
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						primaryArg: command.StringValue(""),
+					Values: map[string]interface{}{
+						primaryArg: "",
 					},
 				},
 			},
@@ -665,9 +665,9 @@ func TestAutocomplete(t *testing.T) {
 					"things",
 				},
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						primaryArg:   command.StringValue("write"),
-						secondaryArg: command.StringValue(""),
+					Values: map[string]interface{}{
+						primaryArg:   "write",
+						secondaryArg: "",
 					},
 				},
 			},
@@ -677,9 +677,9 @@ func TestAutocomplete(t *testing.T) {
 			ctc: &command.CompleteTestCase{
 				Args: "td a huh ",
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						primaryArg:   command.StringValue("huh"),
-						secondaryArg: command.StringValue(""),
+					Values: map[string]interface{}{
+						primaryArg:   "huh",
+						secondaryArg: "",
 					},
 				},
 			},
@@ -694,8 +694,8 @@ func TestAutocomplete(t *testing.T) {
 					"write",
 				},
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						primaryArg: command.StringValue(""),
+					Values: map[string]interface{}{
+						primaryArg: "",
 					},
 				},
 			},
@@ -706,9 +706,9 @@ func TestAutocomplete(t *testing.T) {
 				Args: "td f write ",
 				Want: color.Attributes(),
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						primaryArg: command.StringValue("write"),
-						"format":   command.StringListValue(""),
+					Values: map[string]interface{}{
+						primaryArg: "write",
+						"format":   []string{""},
 					},
 				},
 			},
@@ -719,9 +719,9 @@ func TestAutocomplete(t *testing.T) {
 				Args: "td f uhh ",
 				Want: color.Attributes(),
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						primaryArg: command.StringValue("uhh"),
-						"format":   command.StringListValue(""),
+					Values: map[string]interface{}{
+						primaryArg: "uhh",
+						"format":   []string{""},
 					},
 				},
 			},

@@ -24,7 +24,7 @@ func (tl *List) AddItem(output command.Output, data *command.Data) error {
 		tl.changed = true
 	}
 
-	if data.HasArg(secondaryArg) {
+	if data.Has(secondaryArg) {
 		s := data.String(secondaryArg)
 		if tl.Items[p][s] {
 			return output.Stderrf("item %q, %q already exists", p, s)
@@ -48,7 +48,7 @@ func (tl *List) DeleteItem(output command.Output, data *command.Data) error {
 	}
 
 	// Delete secondary if provided
-	if data.HasArg(secondaryArg) {
+	if data.Has(secondaryArg) {
 		s := data.String(secondaryArg)
 		if tl.Items[p][s] {
 			delete(tl.Items[p], s)
@@ -79,7 +79,7 @@ type fetcher struct {
 	Primary bool
 }
 
-func (f *fetcher) Fetch(value *command.Value, data *command.Data) (*command.Completion, error) {
+func (f *fetcher) Fetch(value string, data *command.Data) (*command.Completion, error) {
 	if f.Primary {
 		primaries := make([]string, 0, len(f.List.Items))
 		for p := range f.List.Items {
@@ -102,29 +102,29 @@ func (f *fetcher) Fetch(value *command.Value, data *command.Data) (*command.Comp
 }
 
 func (tl *List) Node() *command.Node {
-	pf := &command.Completor{
+	pf := &command.Completor[string]{
 		SuggestionFetcher: &fetcher{
 			List:    tl,
 			Primary: true,
 		},
 	}
-	sf := &command.Completor{
+	sf := &command.Completor[string]{
 		SuggestionFetcher: &fetcher{List: tl},
 	}
 	return command.BranchNode(
 		map[string]*command.Node{
 			"a": command.SerialNodes(
-				command.StringNode(primaryArg, primaryDesc, pf),
-				command.OptionalStringNode(secondaryArg, secondaryDesc),
+				command.Arg[string](primaryArg, primaryDesc, pf),
+				command.OptionalArg[string](secondaryArg, secondaryDesc),
 				command.ExecuteErrNode(tl.AddItem),
 			),
 			"d": command.SerialNodes(
-				command.StringNode(primaryArg, primaryDesc, pf),
-				command.OptionalStringNode(secondaryArg, secondaryDesc, sf),
+				command.Arg[string](primaryArg, primaryDesc, pf),
+				command.OptionalArg[string](secondaryArg, secondaryDesc, sf),
 				command.ExecuteErrNode(tl.DeleteItem),
 			),
 			"f": command.SerialNodes(
-				command.StringNode(primaryArg, primaryDesc, pf),
+				command.Arg[string](primaryArg, primaryDesc, pf),
 				color.Arg,
 				command.ExecuteErrNode(tl.FormatPrimary),
 			),

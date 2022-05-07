@@ -73,44 +73,33 @@ func (tl *List) Name() string {
 	return "td"
 }
 
-type fetcher struct {
-	List *List
-	// Primary is whether or not to complete primary or secondary result.
-	Primary bool
-}
+func completor(l *List, primary bool) command.Completor[string] {
+	return command.CompletorFromFunc(func(value string, data *command.Data) (*command.Completion, error) {
+		if primary {
+			primaries := make([]string, 0, len(l.Items))
+			for p := range l.Items {
+				primaries = append(primaries, p)
+			}
+			return &command.Completion{
+				Suggestions: primaries,
+			}, nil
+		}
 
-func (f *fetcher) Fetch(value string, data *command.Data) (*command.Completion, error) {
-	if f.Primary {
-		primaries := make([]string, 0, len(f.List.Items))
-		for p := range f.List.Items {
-			primaries = append(primaries, p)
+		p := data.String(primaryArg)
+		sMap := l.Items[p]
+		secondaries := make([]string, 0, len(sMap))
+		for s := range sMap {
+			secondaries = append(secondaries, s)
 		}
 		return &command.Completion{
-			Suggestions: primaries,
+			Suggestions: secondaries,
 		}, nil
-	}
-
-	p := data.String(primaryArg)
-	sMap := f.List.Items[p]
-	secondaries := make([]string, 0, len(sMap))
-	for s := range sMap {
-		secondaries = append(secondaries, s)
-	}
-	return &command.Completion{
-		Suggestions: secondaries,
-	}, nil
+	})
 }
 
 func (tl *List) Node() *command.Node {
-	pf := &command.Completor[string]{
-		Fetcher: &fetcher{
-			List:    tl,
-			Primary: true,
-		},
-	}
-	sf := &command.Completor[string]{
-		Fetcher: &fetcher{List: tl},
-	}
+	pf := completor(tl, true)
+	sf := completor(tl, false)
 	return command.BranchNode(
 		map[string]*command.Node{
 			"a": command.SerialNodes(

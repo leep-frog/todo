@@ -81,7 +81,7 @@ func TestExecution(t *testing.T) {
 			name: "errors on unknown arg",
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"uhh"},
-				WantStderr: []string{"Unprocessed extra args: [uhh]"},
+				WantStderr: "Unprocessed extra args: [uhh]\n",
 				WantErr:    fmt.Errorf("Unprocessed extra args: [uhh]"),
 			},
 		},
@@ -104,12 +104,13 @@ func TestExecution(t *testing.T) {
 				},
 			},
 			etc: &command.ExecuteTestCase{
-				WantStdout: []string{
+				WantStdout: strings.Join([]string{
 					color.Blue.Format(color.Bold.Format("sleep")),
 					"write",
 					"  code",
 					"  tests",
-				},
+					"",
+				}, "\n"),
 			},
 		},
 		{
@@ -131,12 +132,13 @@ func TestExecution(t *testing.T) {
 			},
 			etc: &command.ExecuteTestCase{
 				Args: []string{},
-				WantStdout: []string{
+				WantStdout: strings.Join([]string{
 					color.Blue.Format(color.Bold.Format("sleep")),
 					"write",
 					"  code",
 					"  tests",
-				},
+					"",
+				}, "\n"),
 			},
 		},
 		// AddItem
@@ -144,7 +146,7 @@ func TestExecution(t *testing.T) {
 			name: "errors if no arguments",
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"a"},
-				WantStderr: []string{`Argument "primary" requires at least 1 argument, got 0`},
+				WantStderr: "Argument \"primary\" requires at least 1 argument, got 0\n",
 				WantErr:    fmt.Errorf(`Argument "primary" requires at least 1 argument, got 0`),
 			},
 		},
@@ -158,7 +160,7 @@ func TestExecution(t *testing.T) {
 						secondaryArg: "tests",
 					},
 				},
-				WantStderr: []string{"Unprocessed extra args: [exclusively]"},
+				WantStderr: "Unprocessed extra args: [exclusively]\n",
 				WantErr:    fmt.Errorf("Unprocessed extra args: [exclusively]"),
 			},
 		},
@@ -241,10 +243,8 @@ func TestExecution(t *testing.T) {
 						primaryArg: "write",
 					},
 				},
-				WantStderr: []string{
-					`primary item "write" already exists`,
-				},
-				WantErr: fmt.Errorf(`primary item "write" already exists`),
+				WantStderr: "primary item \"write\" already exists\n",
+				WantErr:    fmt.Errorf(`primary item "write" already exists`),
 			},
 		},
 		{
@@ -264,10 +264,8 @@ func TestExecution(t *testing.T) {
 						secondaryArg: "code",
 					},
 				},
-				WantStderr: []string{
-					`item "write", "code" already exists`,
-				},
-				WantErr: fmt.Errorf(`item "write", "code" already exists`),
+				WantStderr: "item \"write\", \"code\" already exists\n",
+				WantErr:    fmt.Errorf(`item "write", "code" already exists`),
 			},
 		},
 		// DeleteItem
@@ -275,7 +273,7 @@ func TestExecution(t *testing.T) {
 			name: "errors if no arguments",
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"d"},
-				WantStderr: []string{`Argument "primary" requires at least 1 argument, got 0`},
+				WantStderr: "Argument \"primary\" requires at least 1 argument, got 0\n",
 				WantErr:    fmt.Errorf(`Argument "primary" requires at least 1 argument, got 0`),
 			},
 		},
@@ -283,7 +281,7 @@ func TestExecution(t *testing.T) {
 			name: "errors if too many arguments",
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"d", "write", "tests", "exclusively"},
-				WantStderr: []string{"Unprocessed extra args: [exclusively]"},
+				WantStderr: "Unprocessed extra args: [exclusively]\n",
 				WantErr:    fmt.Errorf("Unprocessed extra args: [exclusively]"),
 				WantData: &command.Data{
 					Values: map[string]interface{}{
@@ -302,7 +300,7 @@ func TestExecution(t *testing.T) {
 						primaryArg: "write",
 					},
 				},
-				WantStderr: []string{"can't delete from empty list"},
+				WantStderr: "can't delete from empty list\n",
 				WantErr:    fmt.Errorf("can't delete from empty list"),
 			},
 		},
@@ -316,7 +314,7 @@ func TestExecution(t *testing.T) {
 						secondaryArg: "code",
 					},
 				},
-				WantStderr: []string{"can't delete from empty list"},
+				WantStderr: "can't delete from empty list\n",
 				WantErr:    fmt.Errorf("can't delete from empty list"),
 			},
 		},
@@ -327,7 +325,7 @@ func TestExecution(t *testing.T) {
 			},
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"d", "write"},
-				WantStderr: []string{`Primary item "write" does not exist`},
+				WantStderr: "Primary item \"write\" does not exist\n",
 				WantErr:    fmt.Errorf(`Primary item "write" does not exist`),
 				WantData: &command.Data{
 					Values: map[string]interface{}{
@@ -342,9 +340,12 @@ func TestExecution(t *testing.T) {
 				Items: map[string]map[string]bool{},
 			},
 			etc: &command.ExecuteTestCase{
-				Args:       []string{"d", "write", "code"},
-				WantStderr: []string{`Primary item "write" does not exist`},
-				WantErr:    fmt.Errorf(`Primary item "write" does not exist`),
+				Args: []string{"d", "write", "code"},
+				WantStderr: strings.Join([]string{
+					`Primary item "write" does not exist`,
+					"",
+				}, "\n"),
+				WantErr: fmt.Errorf(`Primary item "write" does not exist`),
 				WantData: &command.Data{
 					Values: map[string]interface{}{
 						primaryArg:   "write",
@@ -362,7 +363,7 @@ func TestExecution(t *testing.T) {
 			},
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"d", "write", "code"},
-				WantStderr: []string{`Secondary item "code" does not exist`},
+				WantStderr: "Secondary item \"code\" does not exist\n",
 				WantErr:    fmt.Errorf(`Secondary item "code" does not exist`),
 				WantData: &command.Data{
 					Values: map[string]interface{}{
@@ -384,7 +385,7 @@ func TestExecution(t *testing.T) {
 			},
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"d", "write"},
-				WantStderr: []string{"Can't delete primary item that still has secondary items"},
+				WantStderr: "Can't delete primary item that still has secondary items\n",
 				WantErr:    fmt.Errorf("Can't delete primary item that still has secondary items"),
 				WantData: &command.Data{
 					Values: map[string]interface{}{
@@ -542,7 +543,7 @@ func TestExecution(t *testing.T) {
 						color.ArgName: []string{"crazy"},
 					},
 				},
-				WantStderr: []string{"invalid attribute: crazy"},
+				WantStderr: "invalid attribute: crazy\n",
 				WantErr:    fmt.Errorf("invalid attribute: crazy"),
 			},
 		},

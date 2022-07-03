@@ -45,14 +45,14 @@ func (tl *List) ListItems(output command.Output, data *command.Data) {
 
 	for _, p := range ps {
 		f := tl.PrimaryFormats[p]
-		output.Stdout(f.Format(p))
+		output.Stdoutln(f.Format(p))
 		ss := make([]string, 0, len(tl.Items[p]))
 		for s := range tl.Items[p] {
 			ss = append(ss, s)
 		}
 		sort.Strings(ss)
 		for _, s := range ss {
-			output.Stdout(fmt.Sprintf("  %s", s))
+			output.Stdoutln(fmt.Sprintf("  %s", s))
 		}
 	}
 }

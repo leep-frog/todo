@@ -27,24 +27,24 @@ func (tl *List) AddItem(output command.Output, data *command.Data) error {
 	if data.Has(secondaryArg) {
 		s := data.String(secondaryArg)
 		if tl.Items[p][s] {
-			return output.Stderrf("item %q, %q already exists", p, s)
+			return output.Stderrf("item %q, %q already exists\n", p, s)
 		}
 		tl.Items[p][s] = true
 		tl.changed = true
 	} else if !tl.changed {
-		return output.Stderrf("primary item %q already exists", p)
+		return output.Stderrf("primary item %q already exists\n", p)
 	}
 	return nil
 }
 
 func (tl *List) DeleteItem(output command.Output, data *command.Data) error {
 	if tl.Items == nil {
-		return output.Stderr("can't delete from empty list")
+		return output.Stderr("can't delete from empty list\n")
 	}
 
 	p := data.String(primaryArg)
 	if _, ok := tl.Items[p]; !ok {
-		return output.Stderrf("Primary item %q does not exist", p)
+		return output.Stderrf("Primary item %q does not exist\n", p)
 	}
 
 	// Delete secondary if provided
@@ -55,12 +55,12 @@ func (tl *List) DeleteItem(output command.Output, data *command.Data) error {
 			tl.changed = true
 			return nil
 		} else {
-			return output.Stderrf("Secondary item %q does not exist", s)
+			return output.Stderrf("Secondary item %q does not exist\n", s)
 		}
 	}
 
 	if len(tl.Items[p]) != 0 {
-		return output.Stderr("Can't delete primary item that still has secondary items")
+		return output.Stderr("Can't delete primary item that still has secondary items\n")
 	}
 
 	delete(tl.Items, p)

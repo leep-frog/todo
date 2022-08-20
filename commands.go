@@ -73,8 +73,8 @@ func (tl *List) Name() string {
 	return "td"
 }
 
-func completor(l *List, primary bool) command.Completor[string] {
-	return command.CompletorFromFunc(func(value string, data *command.Data) (*command.Completion, error) {
+func completer(l *List, primary bool) command.Completer[string] {
+	return command.CompleterFromFunc(func(value string, data *command.Data) (*command.Completion, error) {
 		if primary {
 			primaries := make([]string, 0, len(l.Items))
 			for p := range l.Items {
@@ -98,8 +98,8 @@ func completor(l *List, primary bool) command.Completor[string] {
 }
 
 func (tl *List) Node() *command.Node {
-	pf := completor(tl, true)
-	sf := completor(tl, false)
+	pf := completer(tl, true)
+	sf := completer(tl, false)
 	return command.BranchNode(
 		map[string]*command.Node{
 			"a": command.SerialNodes(

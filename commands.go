@@ -100,24 +100,24 @@ func completer(l *List, primary bool) command.Completer[string] {
 func (tl *List) Node() *command.Node {
 	pf := completer(tl, true)
 	sf := completer(tl, false)
-	return command.BranchNode(
-		map[string]*command.Node{
+	return command.AsNode(&command.BranchNode{
+		Branches: map[string]*command.Node{
 			"a": command.SerialNodes(
 				command.Arg[string](primaryArg, primaryDesc, pf),
 				command.OptionalArg[string](secondaryArg, secondaryDesc),
-				command.ExecuteErrNode(tl.AddItem),
+				&command.ExecutorProcessor{F: tl.AddItem},
 			),
 			"d": command.SerialNodes(
 				command.Arg[string](primaryArg, primaryDesc, pf),
 				command.OptionalArg[string](secondaryArg, secondaryDesc, sf),
-				command.ExecuteErrNode(tl.DeleteItem),
+				&command.ExecutorProcessor{F: tl.DeleteItem},
 			),
 			"f": command.SerialNodes(
 				command.Arg[string](primaryArg, primaryDesc, pf),
 				color.Arg,
-				command.ExecuteErrNode(tl.FormatPrimary),
+				&command.ExecutorProcessor{F: tl.FormatPrimary},
 			),
 		},
-		command.SerialNodes(command.ExecutorNode(tl.ListItems)),
-	)
+		Default: command.SerialNodes(&command.ExecutorProcessor{F: tl.ListItems}),
+	})
 }

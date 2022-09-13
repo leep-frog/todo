@@ -591,7 +591,6 @@ func TestAutocomplete(t *testing.T) {
 					"d",
 					"f",
 				},
-				WantErr: fmt.Errorf("Unprocessed extra args: []"),
 			},
 		},
 		{

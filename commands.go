@@ -97,11 +97,11 @@ func completer(l *List, primary bool) command.Completer[string] {
 	})
 }
 
-func (tl *List) Node() *command.Node {
+func (tl *List) Node() command.Node {
 	pf := completer(tl, true)
 	sf := completer(tl, false)
-	return command.AsNode(&command.BranchNode{
-		Branches: map[string]*command.Node{
+	return &command.BranchNode{
+		Branches: map[string]command.Node{
 			"a": command.SerialNodes(
 				command.Arg[string](primaryArg, primaryDesc, pf),
 				command.OptionalArg[string](secondaryArg, secondaryDesc),
@@ -119,5 +119,5 @@ func (tl *List) Node() *command.Node {
 			),
 		},
 		Default: command.SerialNodes(&command.ExecutorProcessor{F: tl.ListItems}),
-	})
+	}
 }
